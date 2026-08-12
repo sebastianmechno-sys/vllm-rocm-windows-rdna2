@@ -38,6 +38,23 @@ Tested and verified on an **AMD Radeon RX 6750 XT (12GB VRAM / `gfx1031`)**.
 
 ---
 
+Known Issues — Experimental Status
+This is an experimental reference implementation. It is expected to have bugs on other hardware.
+
+Current status: Verified and working on RX 6750 XT 12GB (gfx1031) — FIRST_TOKEN_OK, 25.9 TFLOPS FP16, 54.20 tok/s.
+
+Known limitations:
+
+Other RDNA2 cards (RX 6600, 6600 XT, 6700 XT) are not yet tested — may need different HSA_OVERRIDE_GFX_VERSION (10.3.0 vs 10.3.1) or rocBLAS rebuild for gfx1030.
+Windows ZMQ IPC bug fixed in v1.1.0 by forcing VLLM_ENABLE_V1_MULTIPROCESSING=0 to use TCP. Other Windows IPC limitations may appear on different models.
+enforce_eager=True is required — torch.compile and CUDA graphs are disabled on RDNA2 Windows.
+TheRock 90GB full build is not included in release (only 708MB minimal runtime). Developers need to build TheRock locally for full rebuild — see docs/BUILD_ROCBLAS.md.
+FP8 and AWQ quantization not tested on RDNA2 Windows yet.
+Multi-GPU (HIP_VISIBLE_DEVICES) not tested.
+If it boots on your RDNA2 card, please open an Issue with your GPU model, gfx version and logs. Contributions welcome — this is a reference for AMD engineers to re-enable RDNA2 in official ROCm 7 Windows builds.
+
+---
+
 ## License
 
 This project is licensed under the Apache 2.0 License.
