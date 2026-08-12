@@ -1,0 +1,5 @@
+PROMPT: 'Hello, my name is'
+OUTPUT: ' J.C. and I am a student at the University of California, Berkeley. I am a graduate...'
+FIRST_TOKEN_OK
+Input: 10.16 toks/s Output: 54.20 toks/s
+Init: 1.84s

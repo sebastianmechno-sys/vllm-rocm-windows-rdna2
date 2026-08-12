@@ -1,5 +1,0 @@
-Metadata-Version: 2.4
-Name: vllm-windows-rocm
-Version: 0.0.1
-Summary: Out-of-tree vLLM platform plugin for native Windows + AMD ROCm (RDNA3 / gfx1100)
-Requires-Python: >=3.10
