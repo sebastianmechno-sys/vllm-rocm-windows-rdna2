@@ -1,0 +1,2 @@
+[vllm.platform_plugins]
+windows_rocm = vllm_windows_rocm:register
