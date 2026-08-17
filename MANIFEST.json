@@ -1,17 +1,17 @@
 {
-  "comment": "Release asset manifest for INSTALL.ps1. Keep names in sync with the release uploads.",
+  "comment": "Release asset manifest for INSTALL.ps1. Keep names in sync with the release uploads. Large archives are split into parts that the installer joins automatically.",
   "assets": [
     {
       "archive": "the-rock-venv.tar.zst",
       "extract_to": "C:\\TheRock",
-      "comment": "torch ROCm venv: extracted as C:\\TheRock\\.venv",
-      "files": ["the-rock-venv.tar.zst"]
+      "comment": "torch ROCm venv: extracted as C:\\TheRock\\.venv (2 parts)",
+      "files": ["the-rock-venv.tar.zst.part-01", "the-rock-venv.tar.zst.part-02"]
     },
     {
       "archive": "therock-rocm-dist.tar.zst",
       "extract_to": "C:\\TheRock",
-      "comment": "ROCm runtime: archive contains build/dist/rocm -> C:\\TheRock\\build\\dist\\rocm",
-      "files": ["therock-rocm-dist.tar.zst"]
+      "comment": "ROCm runtime: archive contains build/dist/rocm -> C:\\TheRock\\build\\dist\\rocm (2 parts)",
+      "files": ["therock-rocm-dist.tar.zst.part-01", "therock-rocm-dist.tar.zst.part-02"]
     },
     {
       "archive": "vllm-stack.tar.zst",
