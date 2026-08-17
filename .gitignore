@@ -1,5 +1,8 @@
-.venv/
-venv/
 __pycache__/
-ROCM_VLLM_RUNTIME/
-rocm_binaries/
+*.pyc
+*.pyd.bak
+*.log.local
+thumbs.db
+.DS_Store
+config.bat
+results/setup_verify.log

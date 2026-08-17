@@ -1,217 +1,196 @@
-# vllm-rocm-windows-rdna2
+# vllm-rocm-windows-rdna2-oneclick
 
-Native vLLM and ROCm 7.x Runtime for AMD Radeon RX 6000 Series (RDNA2) on Windows 11 — No WSL2 Required.
+[![Windows](https://img.shields.io/badge/OS-Windows%2010%2F11-0078D6?style=for-the-badge&logo=windows)]()
+[![ROCm](https://img.shields.io/badge/ROCm-7.15%20TheRock-FF0000?style=for-the-badge&logo=amd)]()
+[![RDNA2](https://img.shields.io/badge/GPU-RDNA2%20RX%206400%E2%80%936950-000000?style=for-the-badge)]()
+[![vLLM](https://img.shields.io/badge/vLLM-0.19.1-00C853?style=for-the-badge)]()
+[![PyTorch](https://img.shields.io/badge/PyTorch-2.12%2Brocm7.15-EE4C2C?style=for-the-badge&logo=pytorch)]()
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg?style=for-the-badge)](LICENSE)
 
-![Windows 11](https://img.shields.io/badge/OS-Windows%2011-0078D6?style=for-the-badge&logo=windows)
-![ROCm](https://img.shields.io/badge/ROCm-7.15-FF0000?style=for-the-badge&logo=amd)
-![RX 6750 XT](https://img.shields.io/badge/GPU-RX%206750%20XT%20gfx1031-000000?style=for-the-badge)
-![vLLM](https://img.shields.io/badge/vLLM-0.19.1-00C853?style=for-the-badge)
-![PyTorch](https://img.shields.io/badge/PyTorch-2.12%2Brocm7.15-EE4C2C?style=for-the-badge&logo=pytorch)
+Native vLLM + ROCm 7.15 (TheRock) for the whole AMD Radeon RDNA2 family on
+Windows — **no WSL2, no NVIDIA, no compiler**. One-click installer, everything
+prebuilt, and an OpenAI-compatible chat server that looks and works like the
+NVIDIA stack.
 
-**Tested and verified on AMD Radeon RX 6750 XT 12GB (gfx1031) — Windows 11 Native — August 2026**
+**Verified on AMD Radeon RX 6750 XT 12 GB (gfx1031) — Windows 11 native — August 2026**
 
-## Overview
-
-This repository provides the first working native implementation of vLLM + ROCm 7.x (TheRock) for AMD Radeon RX 6000 Series on Windows 11.
-
-AMD officially lists the RX 6750 XT, 6700 XT and 6600 XT as "Runtime only" on Windows, with HIP SDK excluded. This project closes that gap by providing rocBLAS binaries built for gfx1031 via ROCm/TheRock, PyTorch 2.12 built against TheRock ROCm runtime, and vLLM 0.19.1 with a custom Windows plugin `windows_rocm` using Triton Attention.
-
-This is not a WSL2 wrapper. It runs native Windows HIP and ROCm directly on RDNA2 hardware.
-
-The goal is to make local LLM inference accessible to millions of RX 6000 users without requiring NVIDIA hardware, and to provide a reference implementation for AMD engineers to re-enable RDNA2 in the official ROCm 7 Windows builds.
-
-## Verification — Real Terminal Logs
-
-All screenshots below are real terminal outputs from RX 6750 XT on Windows 11. No simulation.
-
-### 1. Environment Initialization
-
-```
-torch.compile disabled
-torch 2.12.0+rocm7.15.0a20260728 | cuda_avail True | dev AMD Radeon RX 6750 XT
-Available plugins for group vllm.platform_plugins:
-- windows_rocm -> vllm_windows_rocm:register
-Platform plugin windows_rocm is activated
-```
-
-![env init](assets/01-env-init.png)
-
-### 2. rocBLAS Benchmark — 25.9 TFLOPS FP16
-
-```
-Device ID 0 : AMD Radeon RX 6750 XT gfx1031
-with 12.9 GB memory, max. SCLK 2495 MHz, max. MCLK 1125 MHz
-rocBLAS version: 5.7.0.67811f1ee52
-rocBLAS-commit-hash: ef9e1bc123885fd0b434a8ba451662247043486c
-transA,transB,M,N,K,alpha,lda,beta,ldb,ldc,cold_iters,hot_iters,rocblas-Gflops,us
-N,N,4096,4096,4096,1,4096,0,4096,4096, 2, 10, 25977.3, 5290.73
-```
-
-25977.3 Gflops equals 25.97 TFLOPS FP16 in 5.29 milliseconds on RX 6750 XT.
-
-![rocblas bench](assets/02-rocblas-bench.png)
-
-### 3. vLLM Inference — FIRST_TOKEN_OK
-
-```
-Loading model: facebook/opt-125m
-Model loading took 0.25 GiB memory and 1.026438 seconds
-Available KV cache memory: 5.47 GiB
-GPU KV cache size: 159,264 tokens
-Maximum concurrency for 512 tokens per request: 311.06x
-init engine (profile, create kv cache, warmup model) took 1.85 seconds
-Rendering prompts: 100% | 55.44it/s
-Processed prompts: 100% | 2.42it/s, est. speed input: 14.53 toks/s, output: 38.75 toks/s
-============================================================
-PROMPT: 'Hello, my name is'
-OUTPUT: ' J.C. and I am a student at the University of California, Berkeley'
-============================================================
-FIRST_TOKEN_OK
-```
-
-![vllm first token](assets/03-vllm-first-token.png)
-
-Full logs are available in `benchmarks/rocblas-bench.log` and `benchmarks/vllm-inference.log`.
-
-## How It Works
-
-1. TheRock builds `clr` (HIP) and `rocBLAS` with Tensile kernels for gfx1031.
-2. `HSA_OVERRIDE_GFX_VERSION=10.3.1` forces HIP to recognize RX 6750 XT as a compatible RDNA2 target. `10.3.0` is used as fallback for rocBLAS bench.
-3. PyTorch 2.12.0+rocm7.15 links against TheRock ROCm runtime, resulting in `torch.cuda.is_available() == True` on RX 6750 XT.
-4. vLLM plugin `vllm_windows_rocm` bypasses the CUDA dependency on `vllm._C` and registers `WinRocmAwqGemvKernel` with `TRITON_ATTN` backend.
-5. vLLM engine loads with `enforce_eager=True` and runs native inference.
-
-## Quick Start
-
-### Prerequisites
-
-| Tool | Version | Description | Check |
-|------|---------|-------------|-------|
-| OS | Windows 11 23H2+ | Native, no WSL2 | winver |
-| GPU | RX 6600-6750 XT | gfx1030 / gfx1031 | AMD Software |
-| ROCm | 7.15 TheRock | C:\TheRock\build\core\clr\dist\bin | hipInfo.exe |
-| Python | 3.11+ | TheRock venv | python --version |
-| Driver | Adrenalin 24.x+ | HIP enabled | - |
-
-### Option 1 — Release Zip (Recommended for Users)
-
-1. Download `ROCm_VLLM_Runtime_RDNA2_Windows.zip` from Releases and extract to `C:\TheRock\`.
-2. Run one-time setup as Administrator:
-
-```
-setup.bat
-```
-
-This sets `HSA_OVERRIDE_GFX_VERSION=10.3.1`, `HIP_VISIBLE_DEVICES=0`, `VLLM_TARGET_DEVICE=rocm`, `MASTER_ADDR=127.0.0.1`, `MASTER_PORT=29500` and adds TheRock binaries to PATH.
-
-3. Run inference:
-
-```
-run.bat
-```
-
-Or with custom model:
-
-```
-python inference.py --model facebook/opt-125m --prompt "Hello, my name is"
-```
-
-Expected output: `FIRST_TOKEN_OK`.
-
-### Option 2 — Build From Source (For Developers)
-
-```
-git clone https://github.com/ROCm/TheRock
-# Follow TheRock Windows build guide for gfx1031
-
-git clone https://github.com/sebastianmechno-sys/vllm-rocm-windows-rdna2
-cd vllm-rocm-windows-rdna2
-C:\TheRock\.venv\Scripts\python.exe -m pip install -r requirements.txt
-run.bat
-```
-
-## Benchmarks
-
-| Test | Config | Result | Time |
-|------|--------|--------|------|
-| rocBLAS FP16 GEMM | 4096x4096 | 25977.3 Gflops (25.97 TFLOPS) | 5290 us |
-| rocBLAS FP16 Batched | 2048x2048x16 | 25554.9 Gflops | 10756 us |
-| vLLM opt-125m | 512 ctx, eager, TRITON_ATTN | Input 14.53 tok/s, Output 38.75 tok/s | Init 1.85s |
-| vLLM KV Cache | 12GB VRAM | 5.47 GiB available, 159264 tokens | 311x concurrency |
-
-Hardware: RX 6750 XT 12.9GB, SCLK 2495 MHz, MCLK 1125 MHz, Compute Cap 10.3.
-
-## Project Structure
-
-What goes on the main page (lightweight, <20MB):
-
-```
-vllm-rocm-windows-rdna2/
-├── README.md
-├── setup.bat
-├── run.bat
-├── inference.py
-├── requirements.txt
-├── .gitignore
-├── LICENSE
-├── assets/
-│   ├── 01-env-init.png
-│   ├── 02-rocblas-bench.png
-│   └── 03-vllm-first-token.png
-├── benchmarks/
-│   ├── rocblas-bench.log
-│   └── vllm-inference.log
-└── docs/
-    └── BUILD_ROCBLAS.md
-```
-
-What goes in Release (heavy, ~1GB):
-
-```
-ROCm_VLLM_Runtime_RDNA2_Windows.zip
-├── rocm_binaries/
-└── ROCM_VLLM_RUNTIME/
-```
-
-Do not push `.venv` anywhere. It contains 28k files and is recreated by setup.bat.
-
-## Troubleshooting
-
-Socket error `10049 - Indirizzo richiesto non valido`: Set `MASTER_ADDR=127.0.0.1` and `MASTER_PORT=29500`. Already fixed in run.bat.
-
-`No module named 'vllm._C'` or `vllm._rocm_C`: Expected on Windows. The `windows_rocm` plugin handles it.
-
-`Error: facebook/opt-125m\ (invalid repository id)`: Windows backslash bug. Fixed in inference.py.
-
-`hipInfo.exe not recognized`: PATH not set. Run setup.bat again as Administrator.
-
-Black screen or HSA failure: Use `10.3.0` for rocBLAS bench and `10.3.1` for vLLM.
-
-## Acknowledgments
-
-Built on ROCm/TheRock, PyTorch ROCm and vLLM Project. This repository is not affiliated with AMD.
-
-- TheRock: lightweight open source build system for HIP and ROCm on Windows
-- vLLM: high-throughput and memory-efficient inference engine for LLMs
-- PyTorch: deep learning framework with ROCm backend
-
-Known Issues — Experimental Status
-This is an experimental reference implementation. It is expected to have bugs on other hardware.
-
-Current status: Verified and working on RX 6750 XT 12GB (gfx1031) — FIRST_TOKEN_OK, 25.9 TFLOPS FP16, 54.20 tok/s.
-
-Known limitations:
-
-Other RDNA2 cards (RX 6600, 6600 XT, 6700 XT) are not yet tested — may need different HSA_OVERRIDE_GFX_VERSION (10.3.0 vs 10.3.1) or rocBLAS rebuild for gfx1030.
-Windows ZMQ IPC bug fixed in v1.1.0 by forcing VLLM_ENABLE_V1_MULTIPROCESSING=0 to use TCP. Other Windows IPC limitations may appear on different models.
-enforce_eager=True is required — torch.compile and CUDA graphs are disabled on RDNA2 Windows.
-TheRock 90GB full build is not included in release (only 708MB minimal runtime). Developers need to build TheRock locally for full rebuild — see docs/BUILD_ROCBLAS.md.
-FP8 and AWQ quantization not tested on RDNA2 Windows yet.
-Multi-GPU (HIP_VISIBLE_DEVICES) not tested.
-If it boots on your RDNA2 card, please open an Issue with your GPU model, gfx version and logs. Contributions welcome — this is a reference for AMD engineers to re-enable RDNA2 in official ROCm 7 Windows builds.
+| Result | Number |
+|---|---|
+| rocBLAS FP16 GEMM (native bench) | **25 674 Gflops ≈ 26 TFLOPS** |
+| vLLM decode, Qwen3.5-4B 4-bit | **~58-62 tok/s** (8.3 → 62.5 = 7.5× optimized) |
 
 ---
 
+## Verification — real output from the RX 6750 XT
+
+### 1. ROCm detects the GPU (native Windows process, no WSL)
+
+![gpu detection](assets/01_gpu_detection.png)
+
+### 2. Raw GPU power — native rocblas-bench.exe, FP16 GEMM 4096³
+
+![rocblas bench](assets/02_rocblas_bench.png)
+
+### 3. vLLM tuned decode
+
+![vllm tps](assets/03_vllm_tps.png)
+
+---
+
+## Requirements
+
+| Item | Requirement |
+|---|---|
+| OS | Windows 10/11 (Windows 11 recommended; `tar` must support zstd — automatic on Win11) |
+| GPU | **AMD RDNA2** — RX 6400 / 6500 / 6600 / 6650 / 6700 / 6750 / 6800 / 6900 / 6950 (all XT/M variants), 8+ GB VRAM for the 4B model |
+| Driver | AMD Software: Adrenalin Edition (the normal gaming driver) |
+| Disk | ~25 GB free on `C:` |
+| Internet | only during install (~6 GB: stack ~2.3 GB + model ~3.8 GB) |
+| Admin | one UAC click (installer auto-elevates) |
+
+No compiler, no ROCm installer, no manual setup — everything ships prebuilt.
+
+## Quick start (one-click)
+
+1. Download the repository (ZIP or `git clone`).
+2. **Double-click `INSTALL.bat`** — by default it downloads from this repo's
+   releases; pass a GitHub username to use your own fork instead. It checks
+   GPU + disk, then installs everything it does not already have (re-run is
+   always safe and fast):
+
+   | Step | Action |
+   |---|---|
+   | 1/6 | GPU detection (warns if not RDNA2) + Python 3.11.9 |
+   | 2/6 | 4 archives from GitHub Releases → `C:\Python311`, `C:\TheRock`, `C:\vw_*_build` |
+   | 3/6 | venv fix + torch self-check |
+   | 4/6 | Qwen3.5-4B 4-bit model (skipped if already in HuggingFace cache) |
+   | 5/6 | writes `config.bat` (the file to edit to change model later) |
+   | 6/6 | verification benchmark |
+
+3. **`CHAT.bat`** → opens the web chat in your browser (starts the model server
+   automatically the first time). While the model thinks you see a small
+   *Thinking…* spinner; when it's done, only the final answer streams in — the
+   internal reasoning stays hidden. Tokens stream live with a tok/s counter,
+   everything local on your AMD GPU.
+4. **`SERVE.bat`** → starts the model server on its own (OpenAI-compatible API
+   on `http://127.0.0.1:8000/v1`, like `vllm serve` on NVIDIA). Use it with any
+   OpenAI client, or just run `CHAT.bat`.
+5. **`VERIFY.bat`** → all 3 verification checks in one run: ROCm GPU detection,
+   native rocBLAS FP16 power (**~26 TFLOPS**) and the full 512-token vLLM
+   benchmark (**~58-62 tok/s**).
+
+## Benchmarks
+
+| Test | Config | Result |
+|---|---|---|
+| rocBLAS FP16 GEMM | 4096×4096×4096, rocblas-bench.exe | **25 674 Gflops (≈26 TFLOPS)** |
+| vLLM Qwen3.5-4B decode | 512 tok, greedy, CUDA graphs | **59.4 tok/s** (up to 62.5) |
+| Optimization progression | eager fp16 baseline | 8.3 → 62.5 tok/s (**7.5×**) |
+
+![progression](results/benchmark.png)
+
+Full optimization history:
+
+| # | configuration | tok/s |
+|---|---|---:|
+| 1 | fp16 eager (baseline) | 8.3 |
+| 2 | + CUDA graphs + skinny GEMV | 24.4 |
+| 3 | + AWQ 4-bit quantization | 29.9 |
+| 4 | + native HIP W4 GEMV kernel | 35.9 |
+| 5 | + M=1 GEMV for lm_head | 58.1 |
+| 6 | + direct-store kernel path | 59.1 |
+| 7 | + weight-cast caching | **62.5** |
+
+## How it works
+
+1. **TheRock** builds ROCm (HIP runtime, rocBLAS, Tensile) as native Windows
+   binaries — this is what makes ROCm exist on Windows at all.
+2. `HSA_OVERRIDE_GFX_VERSION=10.3.0` presents any RDNA2 GPU as gfx1030; the
+   HIP kernel ships as a **fat binary (gfx1030 + gfx1031 + gfx1032)** so the
+   whole RX 6000 series runs native code.
+3. PyTorch 2.12 `+rocm7.15` links against that runtime →
+   `torch.cuda.is_available() == True` on RDNA2 Windows.
+4. vLLM plugin `vllm_windows_rocm` registers the tuned kernels: native HIP W4
+   GEMV for quantized linears, M=1 skinny GEMV for dense ones (including the
+   huge tied lm_head), CUDA-graph safe (registered as real torch ops).
+5. `INSTALL.bat` (engine: `INSTALL.ps1`, manifest: `MANIFEST.json`) downloads
+   the 4 prebuilt archives from GitHub Releases and the model from HuggingFace,
+   installs base Python, fixes the venv, verifies with a benchmark. Idempotent:
+   it only downloads what is missing.
+
+## Installed layout
+
+```
+C:\Python311                                 Python 3.11.9
+C:\TheRock\.venv                             torch 2.12+rocm7.15 venv (vLLM 0.19.1)
+C:\TheRock\build\dist\rocm                   ROCm runtime libraries
+C:\TheRock\ROCM_VLLM_RUNTIME                 vLLM + plugin + rocBLAS + rocblas-bench
+C:\vw_cext_build, C:\vw_hipgemv_build        native HIP kernels
+%USERPROFILE%\.cache\huggingface             model weights
+```
+
+Release archives (this repo's **Releases** tab, tag `v2.0`):
+
+| Archive | Size | Content |
+|---|---:|---|
+| `the-rock-venv.tar.zst` | 1.34 GB | torch ROCm venv |
+| `therock-rocm-dist.tar.zst` | 0.85 GB | ROCm runtime |
+| `vllm-stack.tar.zst` | 0.14 GB | vLLM + plugin + rocBLAS + rocblas-bench.exe |
+| `native-kernels.tar.zst` | ~1 MB | HIP GEMV kernels (fat binary) |
+
+## Repository structure
+
+```
+vllm-rocm-windows-rdna2-oneclick/
+├── INSTALL.bat               one-click installer (entry point)
+├── INSTALL.ps1               installer engine (downloads, extracts, verifies)
+├── CHAT.bat                  opens the web chat (auto-starts the server)
+├── SERVE.bat                 starts the model server alone (OpenAI API)
+├── VERIFY.bat                all 3 verification checks in one run
+├── chat.html                 the browser chat UI (Thinking spinner + tok/s)
+├── MANIFEST.json             release archive names + extract targets
+├── plugin_overrides/         tuned plugin modules (awq_gemv, bf16_gemv)
+├── kernels/                  native HIP W4 GEMV source + prebuilt fat binary
+├── scripts/                  model server entry + benchmark + rebuild helper
+├── assets/                   verification screenshots
+└── results/                  raw benchmark logs + progression chart
+```
+
+## Using a different model
+
+Edit `config.bat` (written by the installer): set `SERVED_MODEL` to the model
+folder and `MODEL_NAME` to the name shown in the chat / used by the API, then
+run `CHAT.bat` again. The benchmark uses `BENCH_MODEL` (same file):
+
+```bat
+C:\TheRock\.venv\Scripts\python.exe -c "from huggingface_hub import snapshot_download; print(snapshot_download('<owner>/<repo>'))"
+```
+
+prints the snapshot folder to put in `config.bat`.
+
+## Troubleshooting
+
+| Symptom | Fix |
+|---|---|
+| `No module named 'vllm._C'` warnings | expected — the Windows plugin loads native kernels instead |
+| Python installer exit 1601 | automatic NuGet fallback kicks in; nothing to do |
+| extraction "Can't unlink" errors | close stray Python processes, re-run `INSTALL.bat` (it resumes) |
+| low tok/s | close other GPU workloads; verify `overall_tok_s` ≥ 55 on a cold GPU |
+| non-RDNA2 GPU | installer warns; unvalidated outside RDNA2 |
+| `tar` says "Unrecognized archive format" on the `.zst` files | old Windows 10 without zstd — install Windows updates (bsdtar 3.5+ bundles libzstd; Windows 11 is fine) |
+| chat page says "Server error" | the model is still loading — wait for "Application startup complete" in the SERVE window (~1 minute the first time) |
+| custom debugging | `set BENCH_MODE=eager`, `set VLLM_WIN_HIPGEMV=0`, `set VLLM_WIN_BF16_GEMV=0` |
+
+## Rebuild the kernel
+
+`scripts\rebuild_kernel.py` recompiles `kernels/src/gemv_w4.cu` (needs HIP SDK
++ MSVC). Only for non-RDNA2 targets or exotic torch ABIs; the shipped fat
+binary covers all RDNA2.
+
+## Acknowledgments
+
+Built on ROCm/TheRock, PyTorch ROCm and the vLLM project. Not affiliated with AMD.
+
 ## License
 
-Apache 2.0
+[Apache License 2.0](LICENSE)

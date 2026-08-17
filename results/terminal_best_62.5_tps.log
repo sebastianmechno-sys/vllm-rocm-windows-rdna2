@@ -1,0 +1,126 @@
+﻿vllm-win: native _C kernels loaded from C:\vw_cext_build\vllm_win_C.pyd | ops: ['silu_and_mul', 'gelu_and_mul', 'gelu_tanh_and_mul', 'rms_norm', 'fused_add_rms_norm', 'rotary_embedding', 'weak_ref_tensor', 'apply_repetition_penalties_']
+WARNING 08-17 17:26:49 [rocm.py:43] Failed to import from vllm._C with ModuleNotFoundError("No module named 'vllm._C'")
+WARNING 08-17 17:26:49 [rocm.py:49] Failed to import from vllm._rocm_C with ModuleNotFoundError("No module named 'vllm._rocm_C'")
+== model=C:\Users\sebas\.cache\huggingface\hub\models--cyankiwi--Qwen3.5-4B-AWQ-4bit\snapshots\ef85d23bebaba87b3c4672ba11c449c79dbdb23e mode=graph dev=AMD Radeon RX 6750 XT
+== VRAM total 12.0 GiB free 11.8 GiB
+WARNING 08-17 17:26:53 [envs.py:1744] Unknown vLLM environment variable detected: VLLM_USE_V1
+WARNING 08-17 17:26:53 [envs.py:1744] Unknown vLLM environment variable detected: VLLM_WIN_BF16_GEMV
+WARNING 08-17 17:26:53 [envs.py:1744] Unknown vLLM environment variable detected: VLLM_WIN_HIPGEMV
+WARNING 08-17 17:26:53 [arg_utils.py:1390] The global random seed is set to 0. Since VLLM_ENABLE_V1_MULTIPROCESSING is set to False, this may affect the random state of the Python process that launched vLLM.
+WARNING 08-17 17:26:53 [model.py:2016] Casting torch.bfloat16 to torch.float16.
+WARNING 08-17 17:26:53 [interface.py:229] Failed to import from vllm._C: ModuleNotFoundError("No module named 'vllm._C'")
+WARNING 08-17 17:26:53 [quark_ocp_mx.py:151] AITER is not found or QuarkOCP_MX is not supported on the current platform. QuarkOCP_MX quantization will not be available.
+WARNING 08-17 17:26:54 [vllm.py:859] Inductor compilation was disabled by user settings, optimizations settings that are only active during inductor compilation will be ignored.
+vllm-win: loaded native HIP W4 GEMV (torch.ops.vllm_win_hip.gemv_w4) from C:\vw_hipgemv_build\gemv_w4_hip
+vllm-win: patched UnquantizedLinearMethod/EmbeddingMethod.apply (M=1 skinny GEMV)
+vllm-win: W4A16 dequant kernel placed 2nd (native HIP sym GEMV active)
+vllm-win: registered WinRocmAwqGemvKernel (front) + W4A16 dequant fallback (last)
+WARNING 08-17 17:26:55 [parallel_state.py:1413] Distributed backend nccl is not available; falling back to gloo.
+python.exe : [W817 17:26:55.000000000 socket.cpp:764] [c10d] The client socket has failed to connect to 
+[DESKTOP-CJKFRQP]:50756 (system error: 10049 - Indirizzo richiesto non valido nel proprio contesto.).
+In riga:1 car:520
++ ... XTOK="512"; & C:\TheRock\.venv\Scripts\python.exe C:\Users\sebas\AppD ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: ([W817 17:26:55....rio contesto.).:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+WARNING 08-17 17:26:56 [activation.py:643] [ROCm] PyTorch's native GELU with tanh approximation is unstable. Falling back to GELU(approximate='none').
+WARNING 08-17 17:26:56 [compilation.py:1223] Op 'sparse_attn_indexer' not present in model, enabling with '+sparse_attn_indexer' has no effect
+
+Loading safetensors checkpoint shards:   0% Completed | 0/1 [00:00<?, ?it/s]
+
+Loading safetensors checkpoint shards: 100% Completed | 1/1 [00:02<00:00,  2.24s/it]
+
+Loading safetensors checkpoint shards: 100% Completed | 1/1 [00:02<00:00,  2.24s/it]
+
+C:\TheRock\ROCM_VLLM_RUNTIME\vllm\vllm\model_executor\layers\fla\ops\utils.py:113: UserWarning: Input tensor shape 
+suggests potential format mismatch: seq_len (16) < num_heads (32). This may indicate the inputs were passed in 
+head-first format [B, H, T, ...] when head_first=False was specified. Please verify your input tensor format matches 
+the expected shape [B, T, H, ...].
+  return fn(*contiguous_args, **contiguous_kwargs)
+WARNING 08-17 17:27:05 [compilation.py:1323] Capping cudagraph capture sizes from max 512 to 416 to fit Mamba cache blocks (420 blocks available). This limits the maximum batch size that can use CUDA graphs. To increase this limit, reduce max_num_seqs or increase available GPU memory.
+
+Capturing CUDA graphs (decode, FULL):   0%|          | 0/35 [00:00<?, ?it/s]
+Capturing CUDA graphs (decode, FULL):   3%|2         | 1/35 [00:00<00:22,  1.48it/s]
+Capturing CUDA graphs (decode, FULL):   6%|5         | 2/35 [00:01<00:22,  1.49it/s]
+Capturing CUDA graphs (decode, FULL):   9%|8         | 3/35 [00:01<00:21,  1.52it/s]
+Capturing CUDA graphs (decode, FULL):  11%|#1        | 4/35 [00:02<00:20,  1.54it/s]
+Capturing CUDA graphs (decode, FULL):  14%|#4        | 5/35 [00:03<00:19,  1.56it/s]
+Capturing CUDA graphs (decode, FULL):  17%|#7        | 6/35 [00:03<00:18,  1.58it/s]
+Capturing CUDA graphs (decode, FULL):  20%|##        | 7/35 [00:04<00:17,  1.59it/s]
+Capturing CUDA graphs (decode, FULL):  23%|##2       | 8/35 [00:05<00:16,  1.61it/s]
+Capturing CUDA graphs (decode, FULL):  26%|##5       | 9/35 [00:05<00:15,  1.63it/s]
+Capturing CUDA graphs (decode, FULL):  29%|##8       | 10/35 [00:06<00:15,  1.64it/s]
+Capturing CUDA graphs (decode, FULL):  31%|###1      | 11/35 [00:06<00:14,  1.66it/s]
+Capturing CUDA graphs (decode, FULL):  34%|###4      | 12/35 [00:07<00:13,  1.67it/s]
+Capturing CUDA graphs (decode, FULL):  37%|###7      | 13/35 [00:08<00:12,  1.69it/s]
+Capturing CUDA graphs (decode, FULL):  40%|####      | 14/35 [00:08<00:12,  1.71it/s]
+Capturing CUDA graphs (decode, FULL):  43%|####2     | 15/35 [00:09<00:11,  1.73it/s]
+Capturing CUDA graphs (decode, FULL):  46%|####5     | 16/35 [00:09<00:10,  1.75it/s]
+Capturing CUDA graphs (decode, FULL):  49%|####8     | 17/35 [00:10<00:10,  1.79it/s]
+Capturing CUDA graphs (decode, FULL):  51%|#####1    | 18/35 [00:10<00:09,  1.82it/s]
+Capturing CUDA graphs (decode, FULL):  54%|#####4    | 19/35 [00:11<00:08,  1.86it/s]
+Capturing CUDA graphs (decode, FULL):  57%|#####7    | 20/35 [00:11<00:07,  1.88it/s]
+Capturing CUDA graphs (decode, FULL):  60%|######    | 21/35 [00:12<00:07,  1.91it/s]
+Capturing CUDA graphs (decode, FULL):  63%|######2   | 22/35 [00:12<00:06,  1.94it/s]
+Capturing CUDA graphs (decode, FULL):  66%|######5   | 23/35 [00:13<00:06,  1.97it/s]
+Capturing CUDA graphs (decode, FULL):  69%|######8   | 24/35 [00:13<00:05,  2.00it/s]
+Capturing CUDA graphs (decode, FULL):  71%|#######1  | 25/35 [00:14<00:04,  2.03it/s]
+Capturing CUDA graphs (decode, FULL):  74%|#######4  | 26/35 [00:14<00:04,  2.06it/s]
+Capturing CUDA graphs (decode, FULL):  77%|#######7  | 27/35 [00:15<00:03,  2.09it/s]
+Capturing CUDA graphs (decode, FULL):  80%|########  | 28/35 [00:15<00:03,  2.12it/s]
+Capturing CUDA graphs (decode, FULL):  83%|########2 | 29/35 [00:16<00:02,  2.15it/s]
+Capturing CUDA graphs (decode, FULL):  86%|########5 | 30/35 [00:16<00:02,  2.18it/s]
+Capturing CUDA graphs (decode, FULL):  89%|########8 | 31/35 [00:17<00:01,  2.02it/s]
+Capturing CUDA graphs (decode, FULL):  91%|#########1| 32/35 [00:17<00:01,  2.10it/s]
+Capturing CUDA graphs (decode, FULL):  94%|#########4| 33/35 [00:17<00:00,  2.17it/s]
+Capturing CUDA graphs (decode, FULL):  97%|#########7| 34/35 [00:18<00:00,  2.21it/s]
+Capturing CUDA graphs (decode, FULL): 100%|##########| 35/35 [00:18<00:00,  1.89it/s]
+== engine init 32s
+== VRAM used after init: 11.98 GiB
+
+Rendering prompts:   0%|          | 0/1 [00:00<?, ?it/s]
+Rendering prompts: 100%|##########| 1/1 [00:00<00:00, 58.83it/s]
+
+Processed prompts:   0%|          | 0/1 [00:00<?, ?it/s, est. speed input: 0.00 toks/s, output: 0.00 toks/s]
+Processed prompts: 100%|##########| 1/1 [00:00<00:00,  1.05it/s, est. speed input: 82.56 toks/s, output: 16.72 toks/s]
+Processed prompts: 100%|##########| 1/1 [00:00<00:00,  1.05it/s, est. speed input: 82.56 toks/s, output: 16.72 toks/s]
+Processed prompts: 100%|##########| 1/1 [00:00<00:00,  1.05it/s, est. speed input: 82.56 toks/s, output: 16.72 toks/s]
+
+Rendering prompts:   0%|          | 0/1 [00:00<?, ?it/s]
+Rendering prompts: 100%|##########| 1/1 [00:00<00:00, 1003.18it/s]
+
+Processed prompts:   0%|          | 0/1 [00:00<?, ?it/s, est. speed input: 0.00 toks/s, output: 0.00 toks/s]
+Processed prompts: 100%|##########| 1/1 [00:08<00:00,  8.19s/it, est. speed input: 9.65 toks/s, output: 62.52 toks/s]
+Processed prompts: 100%|##########| 1/1 [00:08<00:00,  8.19s/it, est. speed input: 9.65 toks/s, output: 62.52 toks/s]
+Processed prompts: 100%|##########| 1/1 [00:08<00:00,  8.19s/it, est. speed input: 9.65 toks/s, output: 62.52 toks/s]
+============================================================
+OUTPUT (first 1200 chars):
+Here's a thinking process that leads to the solution:
+
+1.  **Analyze the Request:**
+    *   **Characters:** Farmer (Contadino), Fox (Volpe), Chicken (Gallina), Grain (Grano).
+    *   **Goal:** Move everyone from one side of the river to the other.
+    *   **Constraint 1 (Boat):** The boat can carry only the Farmer and one item at a time.
+    *   **Constraint 2 (Predation):**
+        *   Fox eats Chicken (Volpe mangia Gallina).
+        *   Chicken eats Grain (Gallina mangia Grano).
+        *   *Implied:* Fox does *not* eat Grain, and Farmer protects them.
+    *   **Constraint 3 (Safety):** If left alone together, the predator eats the prey.
+    *   **Task:** Solve step-by-step.
+
+2.  **Initial State:**
+    *   Left Bank (Start): Farmer, Fox, Chicken, Grain.
+    *   Right Bank (Goal): Empty.
+
+3.  **Step-by-Step Logic:**
+
+    *   **Step 1:** The Farmer must take someone across first.
+        *   If he takes the Fox: Left Bank has Chicken + Grain. Chicken eats Grain. (Bad)
+        *   If he takes the Chicken: Left Bank has Fox + Grain. Fox eats Grain. (Bad)
+        *   If he takes the Grain: Left Bank has Fox + Chicken. Fox eats Chicken. (Bad)
+        *   *Wait, let's re-evaluate.*
+    
+============================================================
+prompt_tokens=79 generated_tokens=512 wall=8.19s
+overall_tok_s=62.51

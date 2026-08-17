@@ -1,0 +1,29 @@
+{
+  "comment": "Release asset manifest for INSTALL.ps1. Keep names in sync with the release uploads.",
+  "assets": [
+    {
+      "archive": "the-rock-venv.tar.zst",
+      "extract_to": "C:\\TheRock",
+      "comment": "torch ROCm venv: extracted as C:\\TheRock\\.venv",
+      "files": ["the-rock-venv.tar.zst"]
+    },
+    {
+      "archive": "therock-rocm-dist.tar.zst",
+      "extract_to": "C:\\TheRock",
+      "comment": "ROCm runtime: archive contains build/dist/rocm -> C:\\TheRock\\build\\dist\\rocm",
+      "files": ["therock-rocm-dist.tar.zst"]
+    },
+    {
+      "archive": "vllm-stack.tar.zst",
+      "extract_to": "C:\\TheRock",
+      "comment": "vLLM source + plugin + ROCm bin: extracted as C:\\TheRock\\ROCM_VLLM_RUNTIME",
+      "files": ["vllm-stack.tar.zst"]
+    },
+    {
+      "archive": "native-kernels.tar.zst",
+      "extract_to": "C:\\",
+      "comment": "vw_cext_build + vw_hipgemv_build",
+      "files": ["native-kernels.tar.zst"]
+    }
+  ]
+}
