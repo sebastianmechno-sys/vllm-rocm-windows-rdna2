@@ -52,7 +52,9 @@ No compiler, no ROCm installer, no manual setup — everything ships prebuilt.
 
 ## Quick start (one-click)
 
-1. Download the repository (ZIP or `git clone`).
+1. Download the repository (ZIP or `git clone`). You do **not** need to
+   download the release archives (`*.tar.zst`) manually — the installer
+   fetches them automatically from the [Releases](../../releases) tab.
 2. **Double-click `INSTALL.bat`** — by default it downloads from this repo's
    releases; pass a GitHub username to use your own fork instead. It checks
    GPU + disk, then installs everything it does not already have (re-run is
