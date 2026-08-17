@@ -1,4 +1,4 @@
-# vllm-rocm-windows-rdna2-oneclick
+# vllm-rocm-windows-RDNA2-oneclick
 
 [![Windows](https://img.shields.io/badge/OS-Windows%2010%2F11-0078D6?style=for-the-badge&logo=windows)]()
 [![ROCm](https://img.shields.io/badge/ROCm-7.15%20TheRock-FF0000?style=for-the-badge&logo=amd)]()
