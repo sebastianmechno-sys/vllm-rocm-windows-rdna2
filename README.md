@@ -42,7 +42,7 @@ NVIDIA stack.
 | Item | Requirement |
 |---|---|
 | OS | Windows 10/11 (Windows 11 recommended; `tar` must support zstd — automatic on Win11) |
-| GPU | **AMD RDNA2** — RX 6400 / 6500 / 6600 / 6650 / 6700 / 6750 / 6800 / 6900 / 6950 (all XT/M variants), 8+ GB VRAM for the 4B model |
+| GPU | **AMD RDNA2** — RX 6400 / 6500 / 6600 / 6650 / 6700 / 6750 / 6800 / 6900 / 6950 (all XT/M variants), **Radeon Pro V620** (gfx1030), 8+ GB VRAM for the 4B model |
 | Driver | AMD Software: Adrenalin Edition (the normal gaming driver) |
 | Disk | ~25 GB free on `C:` |
 | Internet | only during install (~6 GB: stack ~2.3 GB + model ~3.8 GB) |

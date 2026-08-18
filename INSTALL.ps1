@@ -70,9 +70,9 @@ Start-Transcript "$stage\setup_transcript.log" -Force | Out-Null
 # GPU check: RDNA2 family (gfx1030/1031/1032) is what this stack was built for.
 $gpus = @(Get-CimInstance Win32_VideoController -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Name)
 Log "GPU(s): $($gpus -join ', ')"
-$rdna2 = $gpus | Where-Object { $_ -match 'RX 6[4-9]\d0|Radeon 6[4-9]0?M' }
+$rdna2 = $gpus | Where-Object { $_ -match 'RX 6[4-9]\d0|Radeon 6[4-9]0?M|Radeon Pro V620' }
 if (-not $rdna2) {
-    Write-Host "[setup] WARNING: no RDNA2 (RX 6600/6700/6800/6900 series) GPU detected." -ForegroundColor Yellow
+    Write-Host "[setup] WARNING: no RDNA2 (RX 6600/6700/6800/6900 series / Radeon Pro V620) GPU detected." -ForegroundColor Yellow
     Write-Host "[setup] The stack may still work on other AMD GPUs via HSA_OVERRIDE, but it is" -ForegroundColor Yellow
     Write-Host "[setup] only validated on RDNA2. Proceeding anyway in 10s (Ctrl+C to abort)..." -ForegroundColor Yellow
     Start-Sleep 10
