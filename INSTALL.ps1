@@ -131,10 +131,10 @@ foreach ($a in $cfg.assets) {
     else {
         Log "  joining $($parts.Count) parts"
         $out = [IO.File]::Create($arc)
-        foreach ($p in $parts) { $in = [IO.File]::OpenRead($p); $in.CopyTo($out); $in.Close() }
+        foreach ($partFile in $parts) { $in = [IO.File]::OpenRead($partFile); $in.CopyTo($out); $in.Close() }
         $out.Close()
     }
-    New-Item -ItemType Directory -Force $dstDir | Out-Null
+    if (-not (Test-Path $dstDir)) { New-Item -ItemType Directory -Force $dstDir | Out-Null }
     & tar --zstd -xf $arc -C $dstDir
     if ($LASTEXITCODE -ne 0) { Err "extraction failed: $arc" }
     Set-Content $marker (Get-Date).ToString('s')
@@ -176,9 +176,10 @@ if (-not $SkipModel) {
         Log "4/6 downloading model from Hugging Face (~3.8 GB): cyankiwi/Qwen3.5-4B-AWQ-4bit"
         $oldEAP = $ErrorActionPreference
         $ErrorActionPreference = 'Continue'   # huggingface_hub logs to stderr; EAP=Stop would kill the script
-        & $venvPy -c "from huggingface_hub import snapshot_download; print(snapshot_download('cyankiwi/Qwen3.5-4B-AWQ-4bit'))" > "$stage\model_path.txt" 2> "$stage\model_err.log"
+        & $venvPy -c "from huggingface_hub import snapshot_download; print(snapshot_download('cyankiwi/Qwen3.5-4B-AWQ-4bit', token=False))" > "$stage\model_path.txt" 2> "$stage\model_err.log"
         $ErrorActionPreference = $oldEAP
-        $modelDir = (Get-Content "$stage\model_path.txt" | Select-Object -Last 1).Trim()
+        $modelLine = Get-Content "$stage\model_path.txt" -ErrorAction SilentlyContinue | Select-Object -Last 1
+        $modelDir = if ($modelLine) { $modelLine.ToString().Trim() } else { "" }
         if (-not $modelDir -or -not (Test-Path $modelDir)) {
             Get-Content "$stage\model_err.log" -ErrorAction SilentlyContinue | Select-Object -Last 5
             Err "model download failed"
@@ -207,7 +208,7 @@ Log "5/6 wrote config.bat"
 # ----------------------------------------------------------- 6. verify ------
 if (-not $modelDir) { Log "6/6 skipped verification (-SkipModel)"; Log "SETUP COMPLETE"; exit 0 }
 Log "6/6 verification benchmark (128 tokens, expect ~55-60 tok/s on RX 6750 XT)"
-$env:HSA_OVERRIDE_GFX_VERSION   = "10.3.0"
+$env:HSA_OVERRIDE_GFX_VERSION   = "10.3.1"
 $env:ROCM_PATH                  = "$stackRoot\build\dist\rocm"
 $env:HIP_PATH                   = "$stackRoot\build\dist\rocm"
 $env:ROCBLAS_TENSILE_LIBPATH    = "$stackRoot\ROCM_VLLM_RUNTIME\bin\rocblas\library"

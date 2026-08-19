@@ -107,9 +107,11 @@ Full optimization history:
 
 1. **TheRock** builds ROCm (HIP runtime, rocBLAS, Tensile) as native Windows
    binaries — this is what makes ROCm exist on Windows at all.
-2. `HSA_OVERRIDE_GFX_VERSION=10.3.0` presents any RDNA2 GPU as gfx1030; the
-   HIP kernel ships as a **fat binary (gfx1030 + gfx1031 + gfx1032)** so the
-   whole RX 6000 series runs native code.
+2. `HSA_OVERRIDE_GFX_VERSION=10.3.1` presents any RDNA2 GPU (gfx1030/1031/1032)
+   as gfx1031 — the arch the packaged rocBLAS/Tensile libraries and
+   `torch_gfx1031.kpack` were built for; the HIP kernel ships as a **fat
+   binary (gfx1030 + gfx1031 + gfx1032)** so the whole RX 6000 series runs
+   native code.
 3. PyTorch 2.12 `+rocm7.15` links against that runtime →
    `torch.cuda.is_available() == True` on RDNA2 Windows.
 4. vLLM plugin `vllm_windows_rocm` registers the tuned kernels: native HIP W4

@@ -15,7 +15,7 @@ echo [verify] ERROR: stack not installed - run INSTALL.bat first.
 pause & exit /b 1
 :py_ok
 
-set "HSA_OVERRIDE_GFX_VERSION=10.3.0"
+set "HSA_OVERRIDE_GFX_VERSION=10.3.1"
 set "ROCM_PATH=C:\TheRock\build\dist\rocm"
 set "HIP_PATH=C:\TheRock\build\dist\rocm"
 set "ROCBLAS_TENSILE_LIBPATH=C:\TheRock\ROCM_VLLM_RUNTIME\bin\rocblas\library"
