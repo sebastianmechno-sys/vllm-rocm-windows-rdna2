@@ -214,11 +214,14 @@ powershell -ExecutionPolicy Bypass -File INSTALL.ps1 -Model <owner>/<model>
 
 | Model | VRAM (AWQ 4-bit) | Expected tok/s* | Notes |
 |---|---:|---:|---|
-| Qwen3.5-4B AWQ | ~3.5 GB | **59-62** | verified (default) |
-| Qwen3.5-8B AWQ | ~5.5 GB | ~35-40 | fits comfortably, untested yet |
-| Gemma 3 4B / Llama 3.2 3B AWQ | ~3 GB | ~50-60 | any `awq` repo works |
+| Qwen3.5-4B AWQ (`cyankiwi/...`) | ~3.5 GB | **59-62** | verified (default) |
+| Gemma 3 4B AWQ (`gaunernst/gemma-3-4b-it-int4-awq`) | ~3.5 GB | ~55-60 | solid mid-size alternative |
+| Llama 3.2 3B AWQ | ~2.5 GB | ~60-65 | lightweight |
 
-*_Same RX 6750 XT. Larger context windows reduce tok/s proportionally._
+*_Same RX 6750 XT. Larger context windows reduce tok/s proportionally.
+Note: the Qwen3.5 8B-class model is the 9B dense — no AWQ/GPTQ quant is
+published for it yet (only MLX/GGUF), so any public AWQ 4-bit model works
+here; the stack is not Qwen-specific._
 
 ## Troubleshooting
 
