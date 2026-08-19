@@ -20,6 +20,7 @@ param(
     [string]$Tag   = "V2.0",
     [string]$BaseUrl = "",
     [string]$Prefix = "",
+    [string]$Model = "cyankiwi/Qwen3.5-4B-AWQ-4bit",
     [switch]$SkipModel
 )
 $ErrorActionPreference = 'Stop'
@@ -164,8 +165,9 @@ Get-Content "$stage\check.txt"
 # ------------------------------------------------------------- 4. model -----
 $modelDir = ""
 if (-not $SkipModel) {
+    $modelShort = ($Model -split '/')[-1]
     # fast path: local HF cache hit -> no network needed
-    $hubRoot = Join-Path $env:USERPROFILE ".cache\huggingface\hub\models--cyankiwi--Qwen3.5-4B-AWQ-4bit\snapshots"
+    $hubRoot = Join-Path $env:USERPROFILE (".cache\huggingface\hub\models--" + ($Model -replace '/', '--') + "\snapshots")
     if (Test-Path $hubRoot) {
         $snap = Get-ChildItem $hubRoot -Directory -ErrorAction SilentlyContinue | Where-Object { Test-Path (Join-Path $_.FullName "model-00001-of-00001.safetensors") } | Select-Object -First 1
         if ($snap) { $modelDir = $snap.FullName }
@@ -173,10 +175,10 @@ if (-not $SkipModel) {
     if ($modelDir) {
         Log "4/6 model already in HF cache (no download): $modelDir"
     } else {
-        Log "4/6 downloading model from Hugging Face (~3.8 GB): cyankiwi/Qwen3.5-4B-AWQ-4bit"
+        Log "4/6 downloading model from Hugging Face: $Model"
         $oldEAP = $ErrorActionPreference
         $ErrorActionPreference = 'Continue'   # huggingface_hub logs to stderr; EAP=Stop would kill the script
-        & $venvPy -c "from huggingface_hub import snapshot_download; print(snapshot_download('cyankiwi/Qwen3.5-4B-AWQ-4bit', token=False))" > "$stage\model_path.txt" 2> "$stage\model_err.log"
+        & $venvPy -c "from huggingface_hub import snapshot_download; print(snapshot_download('$Model', token=False))" > "$stage\model_path.txt" 2> "$stage\model_err.log"
         $ErrorActionPreference = $oldEAP
         $modelLine = Get-Content "$stage\model_path.txt" -ErrorAction SilentlyContinue | Select-Object -Last 1
         $modelDir = if ($modelLine) { $modelLine.ToString().Trim() } else { "" }
@@ -198,7 +200,7 @@ rem MODEL_NAME   = name shown in the chat and used by the API
 set "VENV_PYTHON=$venvPy"
 set "BENCH_MODEL=$modelDir"
 set "SERVED_MODEL=$modelDir"
-set "MODEL_NAME=Qwen3.5-4B"
+set "MODEL_NAME=$modelShort"
 "@ | Set-Content "$here\config.bat"
 Log "5/6 wrote config.bat"
 } else {

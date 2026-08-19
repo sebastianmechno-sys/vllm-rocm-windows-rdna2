@@ -1,0 +1,29 @@
+name: powershell-lint
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  lint:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install PSScriptAnalyzer
+        shell: pwsh
+        run: Install-Module -Name PSScriptAnalyzer -Force -Scope CurrentUser
+
+      - name: Lint installer scripts
+        shell: pwsh
+        run: |
+          $files = Get-ChildItem -Path . -Recurse -Include @("INSTALL.ps1", "UNINSTALL.ps1")
+          $errors = $files | ForEach-Object {
+            Invoke-ScriptAnalyzer -Path $_.FullName -Severity @("Error") -ErrorAction SilentlyContinue
+          }
+          if ($errors) {
+            $errors | Format-Table -AutoSize
+            exit 1
+          }
+          Write-Host "No PowerShell errors found."

@@ -13,6 +13,7 @@ prebuilt, and an OpenAI-compatible chat server that looks and works like the
 NVIDIA stack.
 
 **Verified on AMD Radeon RX 6750 XT 12 GB (gfx1031) — Windows 11 native — August 2026**
+**Community-confirmed: RX 6800 (gfx1030) via `HSA_OVERRIDE_GFX_VERSION=10.3.1` ([issue #2](https://github.com/sebastianmechno-sys/vllm-rocm-windows-rdna2/issues/2))**
 
 | Result | Number |
 |---|---|
@@ -80,6 +81,8 @@ No compiler, no ROCm installer, no manual setup — everything ships prebuilt.
 5. **`VERIFY.bat`** → all 3 verification checks in one run: ROCm GPU detection,
    native rocBLAS FP16 power (**~26 TFLOPS**) and the full 512-token vLLM
    benchmark (**~58-62 tok/s**).
+6. **`UNINSTALL.bat`** → clean removal of the whole stack when you no longer
+   need it (keeps the repo folder itself).
 
 ## Benchmarks
 
@@ -88,6 +91,23 @@ No compiler, no ROCm installer, no manual setup — everything ships prebuilt.
 | rocBLAS FP16 GEMM | 4096×4096×4096, rocblas-bench.exe | **25 674 Gflops (≈26 TFLOPS)** |
 | vLLM Qwen3.5-4B decode | 512 tok, greedy, CUDA graphs | **59.4 tok/s** (up to 62.5) |
 | Optimization progression | eager fp16 baseline | 8.3 → 62.5 tok/s (**7.5×**) |
+
+### Native ROCm vs Vulkan (llama.cpp)
+
+The only other way to run LLMs on RX 6000 under Windows is the llama.cpp Vulkan
+backend (AMD never shipped ROCm for these cards on Windows). Community
+measurements consistently put Vulkan at **70-80% of native HIP throughput** on
+the same RDNA2 silicon, and Vulkan cannot run vLLM at all (OpenAI-compatible
+serving, continuous batching, PagedAttention) — that is what this stack adds:
+
+| Backend | vLLM serving | Qwen3.5-4B decode (RX 6750 XT) | OpenAPI API / batching |
+|---|---|---:|---|
+| **This stack (native HIP + ROCm 7.15)** | ✅ vLLM 0.19.1 | **59-62 tok/s** | ✅ |
+| llama.cpp Vulkan (community fallback) | ❌ (llama-server only) | ~40-45 tok/s* | ⚠️ llama.cpp API |
+
+*_Estimated from the commonly reported 70-80% of HIP throughput; measured on
+llama.cpp HIP vs Vulkan on RDNA3 (70-80%) and RDNA2 (same range) by
+[craftrigs.com](https://craftrigs.com/guides/amd-rocm-llm-inference-support-2026)._
 
 ![progression](results/benchmark.png)
 
@@ -148,6 +168,8 @@ Release archives (this repo's **Releases** tab, tag `V2.0`):
 vllm-rocm-windows-rdna2-oneclick/
 ├── INSTALL.bat               one-click installer (entry point)
 ├── INSTALL.ps1               installer engine (downloads, extracts, verifies)
+├── UNINSTALL.bat             clean removal of the installed stack
+├── UNINSTALL.ps1             uninstaller engine
 ├── CHAT.bat                  opens the web chat (auto-starts the server)
 ├── SERVE.bat                 starts the model server alone (OpenAI API)
 ├── VERIFY.bat                all 3 verification checks in one run
@@ -171,6 +193,32 @@ C:\TheRock\.venv\Scripts\python.exe -c "from huggingface_hub import snapshot_dow
 ```
 
 prints the snapshot folder to put in `config.bat`.
+
+### Pick the model at install time
+
+`INSTALL.bat` accepts a model id, so you never need to edit `config.bat`:
+
+```bat
+INSTALL.bat                        rem default: cyankiwi/Qwen3.5-4B-AWQ-4bit
+INSTALL.bat -Model <owner>/<model> rem any public AWQ/GPTQ model
+INSTALL.bat someuser               rem from YOUR fork's releases
+```
+
+or, with the engine directly (any public AWQ/GPTQ model):
+
+```bat
+powershell -ExecutionPolicy Bypass -File INSTALL.ps1 -Model <owner>/<model>
+```
+
+### Recommended models for 12 GB VRAM (AWQ 4-bit)
+
+| Model | VRAM (AWQ 4-bit) | Expected tok/s* | Notes |
+|---|---:|---:|---|
+| Qwen3.5-4B AWQ | ~3.5 GB | **59-62** | verified (default) |
+| Qwen3.5-8B AWQ | ~5.5 GB | ~35-40 | fits comfortably, untested yet |
+| Gemma 3 4B / Llama 3.2 3B AWQ | ~3 GB | ~50-60 | any `awq` repo works |
+
+*_Same RX 6750 XT. Larger context windows reduce tok/s proportionally._
 
 ## Troubleshooting
 
