@@ -133,7 +133,7 @@ C:\vw_cext_build, C:\vw_hipgemv_build        native HIP kernels
 %USERPROFILE%\.cache\huggingface             model weights
 ```
 
-Release archives (this repo's **Releases** tab, tag `v2.0`):
+Release archives (this repo's **Releases** tab, tag `V2.0`):
 
 | Archive | Size | Content |
 |---|---:|---|
