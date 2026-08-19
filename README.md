@@ -13,7 +13,7 @@ prebuilt, and an OpenAI-compatible chat server that looks and works like the
 NVIDIA stack.
 
 **Verified on AMD Radeon RX 6750 XT 12 GB (gfx1031) — Windows 11 native — August 2026**
-**Community-confirmed: RX 6800 (gfx1030) via `HSA_OVERRIDE_GFX_VERSION=10.3.1` ([issue #2](https://github.com/sebastianmechno-sys/vllm-rocm-windows-rdna2/issues/2))**
+**RX 6800 (gfx1030): testing tracked in [issue #2](https://github.com/sebastianmechno-sys/vllm-rocm-windows-rdna2/issues/2) — confirmation pending**
 
 | Result | Number |
 |---|---|
