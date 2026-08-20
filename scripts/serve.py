@@ -8,12 +8,19 @@ os.environ.setdefault("VLLM_WIN_BF16_GEMV", "1")
 os.environ.setdefault("VLLM_WIN_HIPGEMV", "1")
 os.environ.setdefault("VLLM_LOGGING_LEVEL", "WARNING")
 
-MODEL = os.environ.get(
-    "SERVED_MODEL",
-    r"C:\Users\sebas\.cache\huggingface\hub\models--cyankiwi--Qwen3.5-4B-AWQ-4bit\snapshots\ef85d23bebaba87b3c4672ba11c449c79dbdb23e",
-)
-MODEL_NAME = os.environ.get("MODEL_NAME", "Qwen3.5-4B")
+MODEL = os.environ.get("SERVED_MODEL", "").strip()
+MODEL_NAME = os.environ.get("MODEL_NAME", "").strip()
 PORT = os.environ.get("SERVE_PORT", "8000")
+THINKING = os.environ.get("THINKING", "1").strip() == "1"
+
+if not MODEL:
+    sys.exit(
+        "ERROR: SERVED_MODEL is not set.\n"
+        "Run INSTALL.bat first (it writes config.bat), or edit config.bat\n"
+        "next to this repo and set SERVED_MODEL + MODEL_NAME, then retry."
+    )
+if not MODEL_NAME:
+    MODEL_NAME = os.path.basename(MODEL)
 
 print(f"== {MODEL_NAME} OpenAI-compatible server")
 print(f"== model: {MODEL}")
@@ -28,10 +35,11 @@ cmd = [
     "--dtype", "float16",
     "--max-model-len", "4096",
     "--gpu-memory-utilization", "0.93",
-    "--default-chat-template-kwargs", '{"enable_thinking": true}',
     "--attention-backend", "TRITON_ATTN",
     "--skip-mm-profiling",
     "--limit-mm-per-prompt", '{"image":0,"video":0}',
     "--compilation-config", '{"mode":0,"cudagraph_mode":"FULL_DECODE_ONLY"}',
 ]
+if THINKING:
+    cmd += ["--default-chat-template-kwargs", '{"enable_thinking": true}']
 sys.exit(subprocess.call(cmd))

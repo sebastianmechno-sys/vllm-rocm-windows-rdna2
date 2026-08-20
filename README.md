@@ -10,7 +10,9 @@
 Native vLLM + ROCm 7.15 (TheRock) for the whole AMD Radeon RDNA2 family on
 Windows — **no WSL2, no NVIDIA, no compiler**. One-click installer, everything
 prebuilt, and an OpenAI-compatible chat server that looks and works like the
-NVIDIA stack.
+NVIDIA stack. Code and build pipeline are ready for **RDNA3 (RX 7000)** and
+**RDNA4 (RX 9000)** too — those families are experimental until hardware
+validation (see [docs/MULTIARCH.md](docs/MULTIARCH.md)).
 
 **Verified on AMD Radeon RX 6750 XT 12 GB (gfx1031) — Windows 11 native — August 2026**
 **RX 6800 (gfx1030): testing tracked in [issue #2](https://github.com/sebastianmechno-sys/vllm-rocm-windows-rdna2/issues/2) — confirmation pending**
@@ -19,6 +21,16 @@ NVIDIA stack.
 |---|---|
 | rocBLAS FP16 GEMM (native bench) | **25 674 Gflops ≈ 26 TFLOPS** |
 | vLLM decode, Qwen3.5-4B 4-bit | **~58-62 tok/s** (8.3 → 62.5 = 7.5× optimized) |
+
+### GPU support matrix
+
+| Family | GPUs | gfx | Override | Status |
+|---|---|---|---|---|
+| RDNA2 | RX 6400–6950 (desktop + M), Radeon Pro V620 | 1030/1031/1032 | `10.3.1` | ✅ validated on RX 6750 XT; others pending verification ([report yours](https://github.com/sebastianmechno-sys/vllm-rocm-windows-rdna2/issues/new?template=gpu_verification.yml)) |
+| RDNA3 | RX 7600–7900 (desktop + M) | 1100/1101/1102 | `11.0.0` | ⚠️ experimental — pipeline ready, archives not published yet |
+| RDNA4 | RX 9000 | 1200/1201 | `12.0.0` | ⚠️ experimental — feasibility unconfirmed |
+
+`INSTALL.bat` auto-detects the family; `INSTALL.bat -Variant rdna3` forces one.
 
 ---
 
@@ -43,7 +55,7 @@ NVIDIA stack.
 | Item | Requirement |
 |---|---|
 | OS | Windows 10/11 (Windows 11 recommended; `tar` must support zstd — automatic on Win11) |
-| GPU | **AMD RDNA2** — RX 6400 / 6500 / 6600 / 6650 / 6700 / 6750 / 6800 / 6900 / 6950 (all XT/M variants), **Radeon Pro V620** (gfx1030), 8+ GB VRAM for the 4B model |
+| GPU | **AMD RDNA2** — RX 6400 / 6500 / 6600 / 6650 / 6700 / 6750 / 6800 / 6900 / 6950 (all XT/M variants), **Radeon Pro V620** (gfx1030). RDNA3/RDNA4: experimental (see support matrix above). 8+ GB VRAM for the 4B model; 4 GB cards (RX 6400/6500) get a smaller model automatically |
 | Driver | AMD Software: Adrenalin Edition (the normal gaming driver) |
 | Disk | ~25 GB free on `C:` |
 | Internet | only during install (~6 GB: stack ~2.3 GB + model ~3.8 GB) |
@@ -55,11 +67,11 @@ No compiler, no ROCm installer, no manual setup — everything ships prebuilt.
 
 1. Download the repository (ZIP or `git clone`). You do **not** need to
    download the release archives (`*.tar.zst`) manually — the installer
-   fetches them automatically from the [Releases](../../releases) tab.
+   fetches them automatically from the [Releases](https://github.com/sebastianmechno-sys/vllm-rocm-windows-rdna2/releases) tab.
 2. **Double-click `INSTALL.bat`** — by default it downloads from this repo's
-   releases; pass a GitHub username to use your own fork instead. It checks
-   GPU + disk, then installs everything it does not already have (re-run is
-   always safe and fast):
+   releases; pass a GitHub username to use your own fork instead, `-Variant`
+   to force a GPU family. It checks GPU + disk, then installs everything it
+   does not already have (re-run is always safe and fast):
 
    | Step | Action |
    |---|---|
@@ -142,6 +154,21 @@ Full optimization history:
    installs base Python, fixes the venv, verifies with a benchmark. Idempotent:
    it only downloads what is missing.
 
+## Integrity (SHA256)
+
+Every downloaded part is verified against **`SHA256SUMS.txt`** published on
+the same GitHub release, before extraction:
+
+- a corrupted or truncated download is rejected with `checksum mismatch` —
+  re-run `INSTALL.bat`, it resumes automatically
+- a failed download never leaves a partial file behind (it is deleted and
+  retried once)
+- forks/mirrors without the checksum file: pass `-SkipChecksum`
+
+`scripts\make_checksums.ps1` regenerates the checksum file; `scripts\validate_release.ps1`
+checks the manifest against the release (both run in CI). See
+[docs/RELEASING.md](docs/RELEASING.md) and [SECURITY.md](SECURITY.md).
+
 ## Installed layout
 
 ```
@@ -167,17 +194,20 @@ Release archives (this repo's **Releases** tab, tag `V2.0`):
 ```
 vllm-rocm-windows-rdna2-oneclick/
 ├── INSTALL.bat               one-click installer (entry point)
-├── INSTALL.ps1               installer engine (downloads, extracts, verifies)
+├── INSTALL.ps1               installer engine (downloads, verifies SHA256, extracts)
 ├── UNINSTALL.bat             clean removal of the installed stack
 ├── UNINSTALL.ps1             uninstaller engine
 ├── CHAT.bat                  opens the web chat (auto-starts the server)
 ├── SERVE.bat                 starts the model server alone (OpenAI API)
 ├── VERIFY.bat                all 3 verification checks in one run
-├── chat.html                 the browser chat UI (Thinking spinner + tok/s)
-├── MANIFEST.json             release archive names + extract targets
+├── chat.html                 AI-Studio-style chat UI (Thinking spinner + tok/s + run settings)
+├── MANIFEST.json             release asset manifest, one variant per GPU family
+├── SECURITY.md               vulnerability reporting + supply-chain notes
+├── CONTRIBUTING.md           how to verify GPUs, report bugs, contribute
 ├── plugin_overrides/         tuned plugin modules (awq_gemv, bf16_gemv)
-├── kernels/                  native HIP W4 GEMV source + prebuilt fat binary
-├── scripts/                  model server entry + benchmark + rebuild helper
+├── kernels/                  native HIP W4 GEMV source + per-family build script
+├── scripts/                  model server, benchmark, checksums, release validation
+├── docs/                     multi-arch + release guides
 ├── assets/                   verification screenshots
 └── results/                  raw benchmark logs + progression chart
 ```
@@ -199,9 +229,10 @@ prints the snapshot folder to put in `config.bat`.
 `INSTALL.bat` accepts a model id, so you never need to edit `config.bat`:
 
 ```bat
-INSTALL.bat                        rem default: cyankiwi/Qwen3.5-4B-AWQ-4bit
+INSTALL.bat                        rem default: cyankiwi/Qwen3.5-4B-AWQ-4bit (Qwen/Qwen2.5-1.5B-Instruct-AWQ on 4 GB cards, detected automatically)
 INSTALL.bat -Model <owner>/<model> rem any public AWQ/GPTQ model
 INSTALL.bat someuser               rem from YOUR fork's releases
+INSTALL.bat -Variant rdna3         rem force a GPU family (rdna2/rdna3/rdna4)
 ```
 
 or, with the engine directly (any public AWQ/GPTQ model):
@@ -228,19 +259,22 @@ here; the stack is not Qwen-specific._
 | Symptom | Fix |
 |---|---|
 | `No module named 'vllm._C'` warnings | expected — the Windows plugin loads native kernels instead |
+| `checksum mismatch for ...` | corrupted download — re-run `INSTALL.bat`, it re-fetches the bad part |
+| `download failed: ...rdna3-...` | that GPU family is experimental — archives not published yet (see [docs/MULTIARCH.md](docs/MULTIARCH.md)) |
 | Python installer exit 1601 | automatic NuGet fallback kicks in; nothing to do |
 | extraction "Can't unlink" errors | close stray Python processes, re-run `INSTALL.bat` (it resumes) |
 | low tok/s | close other GPU workloads; verify `overall_tok_s` ≥ 55 on a cold GPU |
-| non-RDNA2 GPU | installer warns; unvalidated outside RDNA2 |
+| non-RDNA2 GPU | installer detects the family (RDNA3/4 experimental) and warns on unknown GPUs |
 | `tar` says "Unrecognized archive format" on the `.zst` files | old Windows 10 without zstd — install Windows updates (bsdtar 3.5+ bundles libzstd; Windows 11 is fine) |
 | chat page says "Server error" | the model is still loading — wait for "Application startup complete" in the SERVE window (~1 minute the first time) |
 | custom debugging | `set BENCH_MODE=eager`, `set VLLM_WIN_HIPGEMV=0`, `set VLLM_WIN_BF16_GEMV=0` |
 
 ## Rebuild the kernel
 
-`scripts\rebuild_kernel.py` recompiles `kernels/src/gemv_w4.cu` (needs HIP SDK
-+ MSVC). Only for non-RDNA2 targets or exotic torch ABIs; the shipped fat
-binary covers all RDNA2.
+`kernels\build_kernels.ps1` recompiles `kernels/src/gemv_w4.cu` per GPU family
+(fat binary for gfx1030+1031+1032, or gfx1100/1200 for RDNA3/4; needs HIP SDK
++ MSVC). Only for non-RDNA2 targets or exotic torch ABIs; the shipped rdna2
+fat binary covers all RDNA2.
 
 ## Acknowledgments
 
