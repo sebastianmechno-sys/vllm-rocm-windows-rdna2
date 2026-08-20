@@ -11,7 +11,7 @@ os.environ.setdefault("VLLM_LOGGING_LEVEL", "WARNING")
 MODEL = os.environ.get("SERVED_MODEL", "").strip()
 MODEL_NAME = os.environ.get("MODEL_NAME", "").strip()
 PORT = os.environ.get("SERVE_PORT", "8000")
-THINKING = os.environ.get("THINKING", "1").strip() == "1"
+THINKING = os.environ.get("THINKING", "0").strip() == "1"
 
 if not MODEL:
     sys.exit(

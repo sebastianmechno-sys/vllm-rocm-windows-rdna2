@@ -750,7 +750,7 @@ function fetchModels(silent) {
     .then(function (j) {
       state.models = (j.data || []).map(function (m) { return m.id; });
       setServerOk(true);
-      if (!silent) fillModelSelect();
+      if (state.models.length) fillModelSelect();
     })
     .catch(function () { setServerOk(false); });
 }
@@ -890,6 +890,7 @@ function ask(c) {
   });
 }
 function streamChat(resp, c) {
+  var convId = c.id;
   var reader = resp.body.getReader();
   var decoder = new TextDecoder();
   var buf = "";
@@ -902,6 +903,10 @@ function streamChat(resp, c) {
       if (done) return; done = true;
       state.busy = false;
       el.sendBtn.classList.remove("busy");
+      if (state.activeId === convId) {
+        var typing = el.messages.querySelector(".typing");
+        if (typing) typing.closest(".msg").remove();
+      }
       var msg = c.messages.find(function (m) { return m.role === "assistant" && m._live; });
       if (msg) {
         msg.content = content;
@@ -913,7 +918,7 @@ function streamChat(resp, c) {
         msg.ts = Date.now();
         c.updated = Date.now();
         saveConv();
-        renderMessages();
+        if (state.activeId === convId) renderMessages();
       }
       renderList();
       updateSend();
@@ -944,17 +949,22 @@ function streamChat(resp, c) {
             content += t0;
             state.streamTokens++;
             var live = c.messages.find(function (m) { return m.role === "assistant" && m._live; });
-            if (!live) {
+            if (state.activeId === convId) {
+              if (!live) {
+                live = { role: "assistant", content: "", thinking: "", _live: true, ts: Date.now() };
+                c.messages.push(live);
+                el.messages.querySelector(".typing") ? el.messages.querySelector(".typing").closest(".msg").remove() : null;
+                el.messages.insertAdjacentHTML("beforeend", msgHtml(live, true));
+              }
+              var node = el.messages.querySelector(".msg:last-child .bubble");
+              if (node) {
+                var thinkingPart = c0 || thinking ? thinkBlock(thinking, true) : "";
+                node.innerHTML = thinkingPart + renderMd(content);
+                scrollBottom();
+              }
+            } else if (!live) {
               live = { role: "assistant", content: "", thinking: "", _live: true, ts: Date.now() };
               c.messages.push(live);
-              el.messages.querySelector(".typing") ? el.messages.querySelector(".typing").closest(".msg").remove() : null;
-              el.messages.insertAdjacentHTML("beforeend", msgHtml(live, true));
-            }
-            var node = el.messages.querySelector(".msg:last-child .bubble");
-            if (node) {
-              var thinkingPart = c0 || thinking ? thinkBlock(thinking, true) : "";
-              node.innerHTML = thinkingPart + renderMd(content);
-              scrollBottom();
             }
           }
         }
