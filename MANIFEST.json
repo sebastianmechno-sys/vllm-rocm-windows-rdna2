@@ -1,29 +1,99 @@
 {
-  "comment": "Release asset manifest for INSTALL.ps1. Keep names in sync with the release uploads. Large archives are split into parts that the installer joins automatically.",
-  "assets": [
-    {
-      "archive": "the-rock-venv.tar.zst",
-      "extract_to": "C:\\TheRock",
-      "comment": "torch ROCm venv: extracted as C:\\TheRock\\.venv (2 parts)",
-      "files": ["the-rock-venv.tar.zst.part-01", "the-rock-venv.tar.zst.part-02"]
+  "comment": "Release asset manifest for INSTALL.ps1. One 'variants' entry per GPU family; the installer auto-detects the family (or takes -Variant). Keep asset names in sync with the release uploads. Large archives are split into parts that the installer joins automatically. Every downloaded part is verified against SHA256SUMS.txt from the same release.",
+  "checksums": "SHA256SUMS.txt",
+  "variants": {
+    "rdna2": {
+      "comment": "AMD Radeon RX 6000 series (gfx1030/1031/1032) - validated (RX 6750 XT). Published as release V2.0.",
+      "override": "10.3.1",
+      "kernels_dir": "C:\\vw_hipgemv_build",
+      "assets": [
+        {
+          "archive": "the-rock-venv.tar.zst",
+          "extract_to": "C:\\TheRock",
+          "comment": "torch ROCm venv: extracted as C:\\TheRock\\.venv (2 parts)",
+          "files": ["the-rock-venv.tar.zst.part-01", "the-rock-venv.tar.zst.part-02"]
+        },
+        {
+          "archive": "therock-rocm-dist.tar.zst",
+          "extract_to": "C:\\TheRock",
+          "comment": "ROCm runtime: archive contains build/dist/rocm -> C:\\TheRock\\build\\dist\\rocm (2 parts)",
+          "files": ["therock-rocm-dist.tar.zst.part-01", "therock-rocm-dist.tar.zst.part-02"]
+        },
+        {
+          "archive": "vllm-stack.tar.zst",
+          "extract_to": "C:\\TheRock",
+          "comment": "vLLM source + plugin + ROCm bin: extracted as C:\\TheRock\\ROCM_VLLM_RUNTIME",
+          "files": ["vllm-stack.tar.zst"]
+        },
+        {
+          "archive": "native-kernels.tar.zst",
+          "extract_to": "C:\\",
+          "comment": "vw_cext_build + vw_hipgemv_build (gfx1030+1031+1032 fat binary)",
+          "files": ["native-kernels.tar.zst"]
+        }
+      ]
     },
-    {
-      "archive": "therock-rocm-dist.tar.zst",
-      "extract_to": "C:\\TheRock",
-      "comment": "ROCm runtime: archive contains build/dist/rocm -> C:\\TheRock\\build\\dist\\rocm (2 parts)",
-      "files": ["therock-rocm-dist.tar.zst.part-01", "therock-rocm-dist.tar.zst.part-02"]
+    "rdna3": {
+      "comment": "AMD Radeon RX 7000 series (gfx1100/1101/1102) - EXPERIMENTAL, needs hardware validation. Archives not published yet (see docs/MULTIARCH.md).",
+      "override": "11.0.0",
+      "kernels_dir": "C:\\vw_hipgemv_build_rdna3",
+      "assets": [
+        {
+          "archive": "rdna3-the-rock-venv.tar.zst",
+          "extract_to": "C:\\TheRock",
+          "comment": "torch ROCm venv for gfx1100 (unpublished)",
+          "files": ["rdna3-the-rock-venv.tar.zst"]
+        },
+        {
+          "archive": "rdna3-therock-rocm-dist.tar.zst",
+          "extract_to": "C:\\TheRock",
+          "comment": "ROCm runtime with gfx1100 Tensile libs (unpublished)",
+          "files": ["rdna3-therock-rocm-dist.tar.zst"]
+        },
+        {
+          "archive": "rdna3-vllm-stack.tar.zst",
+          "extract_to": "C:\\TheRock",
+          "comment": "vLLM source + plugin (unpublished)",
+          "files": ["rdna3-vllm-stack.tar.zst"]
+        },
+        {
+          "archive": "rdna3-native-kernels.tar.zst",
+          "extract_to": "C:\\vw_hipgemv_build_rdna3",
+          "comment": "native HIP kernels (gfx1100+1101+1102 fat binary) (unpublished)",
+          "files": ["rdna3-native-kernels.tar.zst"]
+        }
+      ]
     },
-    {
-      "archive": "vllm-stack.tar.zst",
-      "extract_to": "C:\\TheRock",
-      "comment": "vLLM source + plugin + ROCm bin: extracted as C:\\TheRock\\ROCM_VLLM_RUNTIME",
-      "files": ["vllm-stack.tar.zst"]
-    },
-    {
-      "archive": "native-kernels.tar.zst",
-      "extract_to": "C:\\",
-      "comment": "vw_cext_build + vw_hipgemv_build",
-      "files": ["native-kernels.tar.zst"]
+    "rdna4": {
+      "comment": "AMD Radeon RX 9000 series (gfx1200/1201) - EXPERIMENTAL, feasibility unconfirmed, needs hardware validation. Archives not published yet (see docs/MULTIARCH.md).",
+      "override": "12.0.0",
+      "kernels_dir": "C:\\vw_hipgemv_build_rdna4",
+      "assets": [
+        {
+          "archive": "rdna4-the-rock-venv.tar.zst",
+          "extract_to": "C:\\TheRock",
+          "comment": "torch ROCm venv for gfx1200 (unpublished)",
+          "files": ["rdna4-the-rock-venv.tar.zst"]
+        },
+        {
+          "archive": "rdna4-therock-rocm-dist.tar.zst",
+          "extract_to": "C:\\TheRock",
+          "comment": "ROCm runtime with gfx1200 Tensile libs (unpublished)",
+          "files": ["rdna4-therock-rocm-dist.tar.zst"]
+        },
+        {
+          "archive": "rdna4-vllm-stack.tar.zst",
+          "extract_to": "C:\\TheRock",
+          "comment": "vLLM source + plugin (unpublished)",
+          "files": ["rdna4-vllm-stack.tar.zst"]
+        },
+        {
+          "archive": "rdna4-native-kernels.tar.zst",
+          "extract_to": "C:\\vw_hipgemv_build_rdna4",
+          "comment": "native HIP kernels (gfx1200+1201 fat binary) (unpublished)",
+          "files": ["rdna4-native-kernels.tar.zst"]
+        }
+      ]
     }
-  ]
+  }
 }

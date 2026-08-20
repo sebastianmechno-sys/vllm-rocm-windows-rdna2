@@ -3,6 +3,7 @@ rem ============================================================================
 rem  INSTALL.bat - one click installer.
 rem  Usage:  INSTALL.bat                 (default model + official repo)
 rem          INSTALL.bat -Model <owner>/<model>   (pick any public AWQ/GPTQ model)
+rem          INSTALL.bat -Variant rdna2|rdna3|rdna4   (force GPU family; default: auto)
 rem          INSTALL.bat <github-username>   (from your own fork's releases)
 rem
 rem  Idempotent: checks the machine, downloads only what is missing

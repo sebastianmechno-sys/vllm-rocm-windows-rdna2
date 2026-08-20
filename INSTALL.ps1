@@ -2,17 +2,22 @@
 # INSTALL.ps1 - one-click installer for vllm-rocm-windows-rdna2-oneclick
 #
 # Reads MANIFEST.json (shipped with the repo) to know the exact release asset
-# names, downloads them from GitHub Releases, extracts to the fixed paths the
-# stack expects, installs base Python, fetches the 4-bit model from Hugging
-# Face, then verifies everything with a short benchmark.
+# names per GPU family (rdna2 / rdna3 / rdna4), downloads them from GitHub
+# Releases, extracts to the fixed paths the stack expects, installs base
+# Python, fetches the 4-bit model from Hugging Face, then verifies everything
+# with a short benchmark.
 #
 # Final layout:
 #   C:\Python311                                   base Python 3.11.9
 #   C:\TheRock\.venv                               torch ROCm + venv
 #   C:\TheRock\build\dist\rocm                     ROCm runtime
 #   C:\TheRock\ROCM_VLLM_RUNTIME                   vLLM + plugin + ROCm bin
-#   C:\vw_cext_build, C:\vw_hipgemv_build          native kernels
-#   HF cache: cyankiwi--Qwen3.5-4B-AWQ-4bit        model weights
+#   C:\vw_cext_build, C:\vw_hipgemv_build          native kernels (rdna2)
+#   HF cache                                       model weights
+#
+# Integrity: every downloaded part is verified against SHA256SUMS.txt from the
+# same GitHub release (skip with -SkipChecksum, e.g. for forks/mirrors that do
+# not ship the checksum file). A failed download never leaves a partial file.
 # =============================================================================
 param(
     [string]$Owner = "sebastianmechno-sys",
@@ -20,8 +25,11 @@ param(
     [string]$Tag   = "V2.0",
     [string]$BaseUrl = "",
     [string]$Prefix = "",
-    [string]$Model = "cyankiwi/Qwen3.5-4B-AWQ-4bit",
-    [switch]$SkipModel
+    [string]$Model = "",
+    [ValidateSet("auto","rdna2","rdna3","rdna4")]
+    [string]$Variant = "auto",
+    [switch]$SkipModel,
+    [switch]$SkipChecksum
 )
 $ErrorActionPreference = 'Stop'
 
@@ -68,25 +76,112 @@ if ($free -lt 25) { Err "need ~25 GB free on C: (have $([math]::Round($free,1)) 
 New-Item -ItemType Directory -Force $stage | Out-Null
 Start-Transcript "$stage\setup_transcript.log" -Force | Out-Null
 
-# GPU check: RDNA2 family (gfx1030/1031/1032) is what this stack was built for.
+# ------------------------------------------------ GPU family detection ------
+function Get-GpuFamily {
+    param([string[]]$GpuNames)
+    foreach ($g in $GpuNames) {
+        if ($g -match 'RX 9\d{3}|Radeon 9\d{3}')                     { return "rdna4" }
+        if ($g -match 'RX 7[6-9]\d0|Radeon 7[6-9]\d0M')               { return "rdna3" }
+        if ($g -match 'RX 6[4-9]\d0|Radeon 6[4-9]0?M|Radeon Pro V620') { return "rdna2" }
+    }
+    return ""
+}
+
+function Get-LowVramGpu {
+    param([string[]]$GpuNames)
+    foreach ($g in $GpuNames) {
+        if ($g -match 'RX 6300|RX 6400|RX 6500') { return $true }
+    }
+    return $false
+}
+
 $gpus = @(Get-CimInstance Win32_VideoController -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Name)
 Log "GPU(s): $($gpus -join ', ')"
-$rdna2 = $gpus | Where-Object { $_ -match 'RX 6[4-9]\d0|Radeon 6[4-9]0?M|Radeon Pro V620' }
-if (-not $rdna2) {
-    Write-Host "[setup] WARNING: no RDNA2 (RX 6600/6700/6800/6900 series / Radeon Pro V620) GPU detected." -ForegroundColor Yellow
-    Write-Host "[setup] The stack may still work on other AMD GPUs via HSA_OVERRIDE, but it is" -ForegroundColor Yellow
-    Write-Host "[setup] only validated on RDNA2. Proceeding anyway in 10s (Ctrl+C to abort)..." -ForegroundColor Yellow
-    Start-Sleep 10
+
+if ($Variant -eq "auto") {
+    $Variant = Get-GpuFamily $gpus
+    if ($Variant) {
+        Log "detected GPU family: $Variant"
+    } else {
+        Write-Host "[setup] WARNING: could not identify an AMD RDNA GPU (RX 6000/7000/9000)." -ForegroundColor Yellow
+        Write-Host "[setup] Defaulting to the rdna2 (RX 6000) release - it may not work on other GPUs." -ForegroundColor Yellow
+        Write-Host "[setup] Proceeding anyway in 10s (Ctrl+C to abort)..." -ForegroundColor Yellow
+        Start-Sleep 10
+        $Variant = "rdna2"
+    }
+} else {
+    Log "GPU family forced by -Variant: $Variant"
+}
+
+$v = $cfg.variants.$Variant
+if (-not $v) { Err "MANIFEST.json has no variant '$Variant' (known: $($cfg.variants.PSObject.Properties.Name -join ', '))" }
+
+$lowVram = Get-LowVramGpu $gpus
+if ($lowVram) {
+    Log "low-VRAM GPU detected (4 GB class) - smaller default model"
+}
+
+# Model: explicit -Model wins, else VRAM-aware default.
+$defaultModel = if ($lowVram) { "Qwen/Qwen2.5-1.5B-Instruct-AWQ" } else { "cyankiwi/Qwen3.5-4B-AWQ-4bit" }
+if (-not $Model) { $Model = $defaultModel; Log "default model for this GPU: $Model" }
+
+# ------------------------------------------------- integrity (SHA256) -------
+$checksums = @{}
+if (-not $SkipChecksum) {
+    $shaFile = Join-Path $stage "SHA256SUMS.txt"
+    & curl.exe -sSL --fail -o $shaFile "$base/SHA256SUMS.txt" 2>$null
+    if ($LASTEXITCODE -eq 0 -and (Test-Path $shaFile)) {
+        Get-Content $shaFile | ForEach-Object {
+            if ($_ -match '^([0-9a-fA-F]{64})\s+\*?(\S+)\s*$') {
+                $checksums[$matches[2]] = $matches[1].ToLower()
+            }
+        }
+        Log "integrity: $($checksums.Count) checksums loaded from SHA256SUMS.txt"
+    } else {
+        Write-Host "[setup] WARNING: SHA256SUMS.txt not found on the release - integrity check disabled." -ForegroundColor Yellow
+        Write-Host "[setup] Use -SkipChecksum to silence this warning (forks/mirrors)." -ForegroundColor Yellow
+    }
+} else {
+    Log "integrity check skipped (-SkipChecksum)"
+}
+
+function Get-Sha256($path) {
+    (Get-FileHash -LiteralPath $path -Algorithm SHA256).Hash.ToLower()
 }
 
 function Dl($url, $dst) {
-    if (Test-Path $dst) { Log "  cached: $dst"; return }
-    Log "  get $([IO.Path]::GetFileName($dst))"
-    & curl.exe -sSL --fail --retry 3 --retry-delay 3 -C - -o "$dst.part" $url
-    if ($LASTEXITCODE -ne 0 -and -not (Test-Path "$dst.part")) {
-        Invoke-WebRequest -Uri $url -OutFile "$dst.part" -UseBasicParsing
+    $name = [IO.Path]::GetFileName($dst)
+    if (Test-Path $dst) {
+        if ($checksums.ContainsKey($name)) {
+            if ((Get-Sha256 $dst) -eq $checksums[$name]) { Log "  cached+ok: $name"; return }
+            Log "  cached $name failed checksum - re-downloading"
+            Remove-Item -LiteralPath $dst -Force
+        } else {
+            Log "  cached: $name"; return
+        }
     }
-    if ($LASTEXITCODE -ne 0 -and -not (Test-Path "$dst.part")) { Err "download failed: $url" }
+    Log "  get $name"
+    $ok = $false
+    for ($i = 1; $i -le 2 -and -not $ok; $i++) {
+        & curl.exe -sSL --fail --retry 3 --retry-delay 3 -o "$dst.part" $url
+        if ($LASTEXITCODE -eq 0) { $ok = $true }
+        else {
+            Remove-Item "$dst.part" -Force -ErrorAction SilentlyContinue
+            if ($i -lt 2) { Log "  download failed (attempt $i/2) - retrying" }
+        }
+    }
+    if (-not $ok) {
+        try { Invoke-WebRequest -Uri $url -OutFile "$dst.part" -UseBasicParsing; $ok = $true }
+        catch { $ok = $false }
+    }
+    if (-not $ok -or -not (Test-Path "$dst.part")) { Err "download failed: $url" }
+    if ($checksums.ContainsKey($name)) {
+        $h = Get-Sha256 "$dst.part"
+        if ($h -ne $checksums[$name]) {
+            Remove-Item "$dst.part" -Force -ErrorAction SilentlyContinue
+            Err "checksum mismatch for $name (got $h) - download corrupted; re-run INSTALL.bat"
+        }
+    }
     Move-Item "$dst.part" $dst -Force
 }
 
@@ -111,14 +206,22 @@ if (-not (Test-Path "$pyRoot\python.exe")) {
 } else { Log "1/6 Python already at $pyRoot" }
 
 # -------------------------------------------------------- 2..4. archives ----
-foreach ($a in $cfg.assets) {
+if ($Variant -ne "rdna2") {
+    Write-Host "[setup] NOTE: '$Variant' is experimental - release archives for this family may" -ForegroundColor Yellow
+    Write-Host "[setup] not be published yet (see docs/MULTIARCH.md). Expect failures below." -ForegroundColor Yellow
+}
+foreach ($a in $v.assets) {
     $dstDir = $a.extract_to
     if ($P) { $dstDir = $P + $a.extract_to.Substring(2) }
-    # skip if a marker file says this archive is already extracted (prefix-aware)
+    # skip if a marker file says this archive is already extracted (variant+prefix aware)
     $sfx = if ($P) { ("." + ($P -replace '[\\:]','_')) } else { "" }
-    $marker = Join-Path $stage ("done." + [IO.Path]::GetFileNameWithoutExtension($a.archive) + $sfx)
+    $marker = Join-Path $stage ("done." + [IO.Path]::GetFileNameWithoutExtension($a.archive) + "." + $Variant + $sfx)
+    $legacy = Join-Path $stage ("done." + [IO.Path]::GetFileNameWithoutExtension($a.archive) + $sfx)
     if ((Test-Path $dstDir) -and (Test-Path $marker)) {
         Log "2/6 $([IO.Path]::GetFileName($a.archive)) already extracted"; continue
+    }
+    if ($Variant -eq "rdna2" -and (Test-Path $dstDir) -and (Test-Path $legacy)) {
+        Log "2/6 $([IO.Path]::GetFileName($a.archive)) already extracted (legacy marker)"; continue
     }
     Log "2/6 $([IO.Path]::GetFileName($a.archive)) -> $dstDir"
     $parts = @()
@@ -191,18 +294,25 @@ if (-not $SkipModel) {
 } else { Log "4/6 skipped (-SkipModel)" }
 
 # -------------------------------------------------------- 5. bench config ---
+$kernelsDir = if ($P) { $P + $v.kernels_dir.Substring(2) } else { $v.kernels_dir }
 if ($modelDir) {
 @"
 @echo off
 rem generated by INSTALL.ps1 - edit this file to use a different model
 rem SERVED_MODEL = folder containing the model (config.json + safetensors)
 rem MODEL_NAME   = name shown in the chat and used by the API
+rem HSA_OVERRIDE_GFX_VERSION = per-family arch override (rdna2: 10.3.1, rdna3: 11.0.0, rdna4: 12.0.0)
+rem VLLM_WIN_HIPGEMV_DIR = folder of the native HIP kernels for this family
+rem THINKING = 0 disables the model's internal reasoning (chat hides it anyway)
 set "VENV_PYTHON=$venvPy"
 set "BENCH_MODEL=$modelDir"
 set "SERVED_MODEL=$modelDir"
 set "MODEL_NAME=$modelShort"
+set "HSA_OVERRIDE_GFX_VERSION=$($v.override)"
+set "VLLM_WIN_HIPGEMV_DIR=$kernelsDir"
+set "THINKING=1"
 "@ | Set-Content "$here\config.bat"
-Log "5/6 wrote config.bat"
+Log "5/6 wrote config.bat (family $Variant, override $($v.override))"
 } else {
     Log "5/6 skipped config.bat (-SkipModel: set BENCH_MODEL manually, then run VERIFY.bat)"
 }
@@ -210,13 +320,14 @@ Log "5/6 wrote config.bat"
 # ----------------------------------------------------------- 6. verify ------
 if (-not $modelDir) { Log "6/6 skipped verification (-SkipModel)"; Log "SETUP COMPLETE"; exit 0 }
 Log "6/6 verification benchmark (128 tokens, expect ~55-60 tok/s on RX 6750 XT)"
-$env:HSA_OVERRIDE_GFX_VERSION   = "10.3.1"
+$env:HSA_OVERRIDE_GFX_VERSION   = $v.override
 $env:ROCM_PATH                  = "$stackRoot\build\dist\rocm"
 $env:HIP_PATH                   = "$stackRoot\build\dist\rocm"
 $env:ROCBLAS_TENSILE_LIBPATH    = "$stackRoot\ROCM_VLLM_RUNTIME\bin\rocblas\library"
 $env:PATH                       = "$stackRoot\ROCM_VLLM_RUNTIME\bin;$env:PATH"
 $env:VLLM_WIN_BF16_GEMV         = "1"
 $env:VLLM_WIN_HIPGEMV           = "1"
+$env:VLLM_WIN_HIPGEMV_DIR       = $kernelsDir
 $env:BENCH_MODE                 = "graph"
 $env:BENCH_MAXTOK               = "128"
 $env:BENCH_MODEL                = $modelDir

@@ -31,7 +31,9 @@ $here = Split-Path -Parent $MyInvocation.MyCommand.Path
 $targets = @(
     "C:\TheRock",
     "C:\vw_cext_build",
-    "C:\vw_hipgemv_build"
+    "C:\vw_hipgemv_build",
+    "C:\vw_hipgemv_build_rdna3",
+    "C:\vw_hipgemv_build_rdna4"
 )
 foreach ($t in $targets) {
     if (Test-Path $t) {
