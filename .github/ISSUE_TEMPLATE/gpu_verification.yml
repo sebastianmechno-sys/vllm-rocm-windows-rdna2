@@ -1,0 +1,64 @@
+name: GPU verification report
+description: Report VERIFY.bat results for your AMD GPU (helps build the compatibility matrix)
+title: "GPU verification: [GPU model]"
+labels: ["gpu-verification"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for testing! Fill in the VERIFY.bat output below. This adds your
+        card to the compatibility matrix.
+  - type: input
+    id: gpu
+    attributes:
+      label: GPU model
+      description: Exact model, e.g. AMD Radeon RX 6800 (gfx1030)
+      placeholder: AMD Radeon RX 6800
+    validations:
+      required: true
+  - type: input
+    id: vram
+    attributes:
+      label: VRAM
+      description: e.g. 16 GB
+    validations:
+      required: true
+  - type: input
+    id: driver
+    attributes:
+      label: Adrenalin driver version
+      placeholder: e.g. 26.8.1
+  - type: input
+    id: os
+    attributes:
+      label: Windows version
+      placeholder: Windows 11 24H2 / Windows 10 22H2
+    validations:
+      required: true
+  - type: textarea
+    id: verify-log
+    attributes:
+      label: VERIFY.bat output
+      description: Paste the full log (steps 1/3, 2/3, 3/3 including overall_tok_s)
+      render: text
+    validations:
+      required: true
+  - type: input
+    id: model
+    attributes:
+      label: Model used
+      description: Default is cyankiwi/Qwen3.5-4B-AWQ-4bit
+    validations:
+      required: true
+  - type: textarea
+    id: notes
+    attributes:
+      label: Notes
+      description: Warnings, retries, unusual steps, screenshots
+  - type: checkboxes
+    id: confirm
+    attributes:
+      label: Confirmation
+      options:
+        - label: I ran VERIFY.bat on a cold GPU (no other heavy GPU workloads)
+          required: true

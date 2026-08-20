@@ -1,0 +1,75 @@
+name: validate
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  validate-manifest:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate MANIFEST.json syntax
+        shell: pwsh
+        run: |
+          $cfg = Get-Content MANIFEST.json -Raw | ConvertFrom-Json
+          if (-not $cfg.variants) { throw "MANIFEST.json has no variants" }
+          if (-not $cfg.checksums) { throw "MANIFEST.json missing checksums field" }
+          foreach ($v in $cfg.variants.PSObject.Properties) {
+            if (-not $v.Value.override) { throw "variant $($v.Name) missing override" }
+            if (-not $v.Value.assets) { throw "variant $($v.Name) missing assets" }
+          }
+          Write-Host "MANIFEST.json OK"
+
+      - name: Check release assets exist (default tag)
+        shell: pwsh
+        run: |
+          $tag = (Select-String -Path INSTALL.ps1 -Pattern '\[string\]\$Tag\s*=\s*"([^"]+)"' | Select-Object -First 1).Matches[0].Groups[1].Value
+          Write-Host "default tag from INSTALL.ps1: $tag"
+          & "$PWD\scripts\validate_release.ps1" -Tag $tag
+
+  lint:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install PSScriptAnalyzer
+        shell: pwsh
+        run: Install-Module -Name PSScriptAnalyzer -Force -Scope CurrentUser
+
+      - name: Lint all PowerShell scripts
+        shell: pwsh
+        run: |
+          $files = Get-ChildItem -Path . -Recurse -Filter "*.ps1" | Where-Object { $_.FullName -notmatch '\\\.git\\' }
+          $errors = $files | ForEach-Object {
+            Invoke-ScriptAnalyzer -Path $_.FullName -Severity @("Error") -ErrorAction SilentlyContinue
+          }
+          if ($errors) {
+            $errors | Format-Table -AutoSize
+            exit 1
+          }
+          Write-Host "No PowerShell errors found."
+
+      - name: Syntax-check all PowerShell scripts
+        shell: pwsh
+        run: |
+          $files = Get-ChildItem -Path . -Recurse -Filter "*.ps1" | Where-Object { $_.FullName -notmatch '\\\.git\\' }
+          foreach ($f in $files) {
+            [void][scriptblock]::Create((Get-Content $f.FullName -Raw))
+          }
+          Write-Host "All PowerShell scripts parse cleanly."
+
+      - name: Check batch files reference existing scripts
+        shell: pwsh
+        run: |
+          foreach ($bat in Get-ChildItem -Path . -Filter "*.bat") {
+            $content = Get-Content $bat.FullName -Raw
+            foreach ($m in [regex]::Matches($content, '%~dp0([\w.]+)')) {
+              $name = $m.Groups[1].Value
+              if (-not (Test-Path (Join-Path $PWD $name))) {
+                Write-Host "WARNING: $($bat.Name) references missing file: $name"
+              }
+            }
+          }
