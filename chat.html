@@ -900,6 +900,8 @@ function streamChat(resp, c) {
   return new Promise(function (resolve, reject) {
     function finish() {
       if (done) return; done = true;
+      state.busy = false;
+      el.sendBtn.classList.remove("busy");
       var msg = c.messages.find(function (m) { return m.role === "assistant" && m._live; });
       if (msg) {
         msg.content = content;
@@ -913,6 +915,8 @@ function streamChat(resp, c) {
         saveConv();
         renderMessages();
       }
+      renderList();
+      updateSend();
       resolve();
     }
     function pump() {
