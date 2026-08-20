@@ -4,16 +4,40 @@ rem  SERVE.bat - start the model server (works like `vllm serve`).
 rem  The model becomes an OpenAI-compatible API on http://127.0.0.1:8000
 rem  Keep this window open. Talk to it with CHAT.bat (or any OpenAI client).
 rem  To change the model: edit config.bat (SERVED_MODEL + MODEL_NAME).
+rem  If config.bat is missing (e.g. a fresh ZIP download), the installed
+rem  default model is auto-detected from the HuggingFace cache instead.
 rem =============================================================================
 setlocal
 
-if exist "%~dp0config.bat" call "%~dp0config.bat"
-if not defined VENV_PYTHON set "VENV_PYTHON=C:\TheRock\.venv\Scripts\python.exe"
-if exist "%VENV_PYTHON%" goto :py_ok
+set "VENV_PYTHON=C:\TheRock\.venv\Scripts\python.exe"
+
+if exist "%~dp0config.bat" (
+    call "%~dp0config.bat"
+    goto :env_ok
+)
+
+echo [serve] config.bat not found - auto-detecting the installed model...
+if exist "%VENV_PYTHON%" goto :scan_model
 echo [serve] ERROR: stack not installed - run INSTALL.bat first.
 pause & exit /b 1
-:py_ok
 
+:scan_model
+set "HF_HUB_DIR=%USERPROFILE%\.cache\huggingface\hub\models--cyankiwi--Qwen3.5-4B-AWQ-4bit\snapshots"
+if not exist "%HF_HUB_DIR%" goto :no_model
+for /d %%d in ("%HF_HUB_DIR%\*") do (
+    if exist "%%d\config.json" set "SERVED_MODEL=%%d"
+)
+if not defined SERVED_MODEL goto :no_model
+set "MODEL_NAME=Qwen3.5-4B-AWQ-4bit"
+echo [serve] found %MODEL_NAME% at %SERVED_MODEL%
+goto :env_ok
+
+:no_model
+echo [serve] ERROR: no model found in the HuggingFace cache.
+echo [serve] Run INSTALL.bat first, or create config.bat with SERVED_MODEL + MODEL_NAME.
+pause & exit /b 1
+
+:env_ok
 if not defined HSA_OVERRIDE_GFX_VERSION set "HSA_OVERRIDE_GFX_VERSION=10.3.1"
 set "ROCM_PATH=C:\TheRock\build\dist\rocm"
 set "HIP_PATH=C:\TheRock\build\dist\rocm"
