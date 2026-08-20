@@ -39,7 +39,6 @@ cmd = [
     "--skip-mm-profiling",
     "--limit-mm-per-prompt", '{"image":0,"video":0}',
     "--compilation-config", '{"mode":0,"cudagraph_mode":"FULL_DECODE_ONLY"}',
+    "--default-chat-template-kwargs", '{"enable_thinking": %s}' % ("true" if THINKING else "false"),
 ]
-if THINKING:
-    cmd += ["--default-chat-template-kwargs", '{"enable_thinking": true}']
 sys.exit(subprocess.call(cmd))

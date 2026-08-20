@@ -10,7 +10,8 @@ curl -s -o nul -m 2 %API%
 if %ERRORLEVEL%==0 goto :up
 echo [chat] Server not running - starting it in a new window...
 start "" "%~dp0SERVE.bat"
-echo [chat] Waiting for the engine to load (about 1 minute)...
+echo [chat] Waiting for the engine to load...
+echo [chat] First start can take 8-10 minutes (kernel compilation); later starts ~1 minute.
 :wait
 timeout /t 5 /nobreak >nul
 curl -s -o nul -m 2 %API%

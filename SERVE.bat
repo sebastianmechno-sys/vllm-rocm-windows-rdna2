@@ -26,6 +26,7 @@ cd /d "C:\TheRock\ROCM_VLLM_RUNTIME\vllm-rocm-windows\run"
 echo ============================================================
 echo   Starting model server on 127.0.0.1:8000 ...
 echo   Wait for "Application startup complete", then run CHAT.bat
+echo   First start takes 8-10 minutes (kernel compilation).
 echo ============================================================
 "%VENV_PYTHON%" "%~dp0scripts\serve.py"
 endlocal

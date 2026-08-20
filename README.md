@@ -75,7 +75,7 @@ No compiler, no ROCm installer, no manual setup — everything ships prebuilt.
 
    | Step | Action |
    |---|---|
-   | 1/6 | GPU detection (warns if not RDNA2) + Python 3.11.9 |
+   | 1/6 | GPU family detection (rdna2/rdna3/rdna4, warns on unknown GPUs) + Python 3.11.9 |
    | 2/6 | 4 archives from GitHub Releases → `C:\Python311`, `C:\TheRock`, `C:\vw_*_build` |
    | 3/6 | venv fix + torch self-check |
    | 4/6 | Qwen3.5-4B 4-bit model (skipped if already in HuggingFace cache) |
@@ -83,10 +83,11 @@ No compiler, no ROCm installer, no manual setup — everything ships prebuilt.
    | 6/6 | verification benchmark |
 
 3. **`CHAT.bat`** → opens the web chat in your browser (starts the model server
-   automatically the first time). While the model thinks you see a small
-   *Thinking…* spinner; when it's done, only the final answer streams in — the
-   internal reasoning stays hidden. Tokens stream live with a tok/s counter,
-   everything local on your AMD GPU.
+   automatically the first time). By default the model answers **directly**
+   (`THINKING=0` in `config.bat`); set `THINKING=1` to let the model explain
+   its reasoning — with Qwen3.5 the reasoning text then appears inside the
+   answer (this template does not split it into a separate field). Tokens
+   stream live with a tok/s counter, everything local on your AMD GPU.
 4. **`SERVE.bat`** → starts the model server on its own (OpenAI-compatible API
    on `http://127.0.0.1:8000/v1`, like `vllm serve` on NVIDIA). Use it with any
    OpenAI client, or just run `CHAT.bat`.
@@ -266,7 +267,9 @@ here; the stack is not Qwen-specific._
 | low tok/s | close other GPU workloads; verify `overall_tok_s` ≥ 55 on a cold GPU |
 | non-RDNA2 GPU | installer detects the family (RDNA3/4 experimental) and warns on unknown GPUs |
 | `tar` says "Unrecognized archive format" on the `.zst` files | old Windows 10 without zstd — install Windows updates (bsdtar 3.5+ bundles libzstd; Windows 11 is fine) |
-| chat page says "Server error" | the model is still loading — wait for "Application startup complete" in the SERVE window (~1 minute the first time) |
+| chat page says "Server error" | the model is still loading — wait for "Application startup complete" in the SERVE window (**8-10 minutes the first time** — kernel compilation; later starts take ~1 minute) |
+| `ERROR: SERVED_MODEL is not set` | `config.bat` is missing (it is written by `INSTALL.bat`, and it is gitignored on purpose). Run `INSTALL.bat`, or copy `config.bat` from a previous install, or create it manually: `set "SERVED_MODEL=C:\path\to\model\folder"` + `set "MODEL_NAME=MyModel"` |
+| chat shows "Thinking Process…" inside answers | that is the model's reasoning printed in the answer — set `THINKING=0` in `config.bat` for direct answers (then re-run `CHAT.bat`) |
 | custom debugging | `set BENCH_MODE=eager`, `set VLLM_WIN_HIPGEMV=0`, `set VLLM_WIN_BF16_GEMV=0` |
 
 ## Rebuild the kernel
