@@ -1,5 +1,7 @@
 # vllm-rocm-windows-RDNA2-oneclick
 
+> **中文版文档：[README_zh-CN.md](README_zh-CN.md)**
+
 [![Windows](https://img.shields.io/badge/OS-Windows%2010%2F11-0078D6?style=for-the-badge&logo=windows)]()
 [![ROCm](https://img.shields.io/badge/ROCm-7.15%20TheRock-FF0000?style=for-the-badge&logo=amd)]()
 [![RDNA2](https://img.shields.io/badge/GPU-RDNA2%20RX%206400%E2%80%936950-000000?style=for-the-badge)]()
