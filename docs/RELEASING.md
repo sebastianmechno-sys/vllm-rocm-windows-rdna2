@@ -93,5 +93,5 @@ If the new tag becomes the default, update `$Tag` in `INSTALL.ps1` and the
 is present. Run it locally:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File scripts\validate_release.ps1 -Tag V2.0
+powershell -ExecutionPolicy Bypass -File scripts\validate_release.ps1 -Tag V2.1
 ```

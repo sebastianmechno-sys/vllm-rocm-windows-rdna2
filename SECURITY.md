@@ -44,6 +44,7 @@ release assets:
 | Version | Supported |
 |---|---|
 | main (latest) | ✅ |
+| V2.1 | ✅ security fixes |
 | V2.0 | ✅ security fixes |
 | v1.1.0 and older | ❌ |
 
