@@ -8,6 +8,8 @@
 # Usage:
 #   scripts\make_checksums.ps1                     # from staging dir
 #   scripts\make_checksums.ps1 -DownloadMissing    # fetch missing parts from the release
+#   scripts\make_checksums.ps1 -SplitMissing       # re-split merged archives in staging
+#                                                  # (parts were sliced at 700 MiB = 738197504 B)
 #   scripts\make_checksums.ps1 -Variant rdna2      # only one family
 #
 # The generated SHA256SUMS.txt must be uploaded as an asset of the SAME GitHub
@@ -22,7 +24,9 @@ param(
     [string]$Tag = "V2.0",
     [ValidateSet("all","rdna2","rdna3","rdna4")]
     [string]$Variant = "all",
-    [switch]$DownloadMissing
+    [long]$ChunkSize = 738197504,
+    [switch]$DownloadMissing,
+    [switch]$SplitMissing
 )
 $ErrorActionPreference = 'Stop'
 
@@ -33,11 +37,48 @@ if (-not (Test-Path $manifestPath)) { Write-Host "ERROR: $Manifest not found" -F
 
 $cfg = Get-Content $manifestPath -Raw | ConvertFrom-Json
 
+# Re-split a merged archive into the .part-XX chunks the release was uploaded with.
+function Split-IntoParts {
+    param([string]$Merged, [string]$OutName, [string]$Dir)
+    if (-not (Test-Path $Merged)) { Write-Host "WARNING: merged archive missing: $Merged" -ForegroundColor Yellow; return $false }
+    $n = 1
+    $fs = [IO.File]::OpenRead($Merged)
+    $buf = New-Object byte[] $ChunkSize
+    try {
+        for (;;) {
+            $read = $fs.Read($buf, 0, $ChunkSize)
+            if ($read -eq 0) { break }
+            $part = Join-Path $Dir ("{0}.part-{1:D2}" -f $OutName, $n)
+            $out = [IO.File]::Create($part)
+            try { $out.Write($buf, 0, $read) } finally { $out.Close() }
+            Write-Host "  split -> $([IO.Path]::GetFileName($part)) ($read bytes)" -ForegroundColor Cyan
+            $n++
+            if ($read -lt $ChunkSize) { break }
+        }
+    } finally { $fs.Close() }
+    return $true
+}
+
 $files = @()
+$splitOnce = @{}   # merged archives already re-split in this run
 foreach ($vname in $cfg.variants.PSObject.Properties.Name) {
     if ($Variant -ne "all" -and $vname -ne $Variant) { continue }
     foreach ($a in $cfg.variants.$vname.assets) {
-        foreach ($f in $a.files) { $files += $f }
+        foreach ($f in $a.files) {
+            $path = Join-Path $StagingDir $f
+            if (-not (Test-Path $path) -and $SplitMissing -and -not $splitOnce.ContainsKey($a.archive)) {
+                $merged = Join-Path $StagingDir $a.archive
+                if (Test-Path $merged) {
+                    Write-Host "re-splitting $($a.archive) into parts..." -ForegroundColor Yellow
+                    # part name = full archive name + .part-XX (e.g. the-rock-venv.tar.zst.part-01)
+                    [void](Split-IntoParts -Merged $merged -OutName $a.archive -Dir $StagingDir)
+                } else {
+                    Write-Host "WARNING: no merged archive for $f (use -DownloadMissing)" -ForegroundColor Yellow
+                }
+                $splitOnce[$a.archive] = $true
+            }
+            $files += $f
+        }
     }
 }
 
@@ -51,7 +92,7 @@ foreach ($f in ($files | Sort-Object -Unique)) {
         if ($LASTEXITCODE -ne 0) { Write-Host "WARNING: could not fetch $f - skipped" -ForegroundColor Yellow; continue }
     }
     if (-not (Test-Path $path)) {
-        Write-Host "WARNING: missing in staging (use -DownloadMissing): $f" -ForegroundColor Yellow
+        Write-Host "WARNING: missing in staging (use -DownloadMissing / -SplitMissing): $f" -ForegroundColor Yellow
         continue
     }
     $hash = (Get-FileHash -LiteralPath $path -Algorithm SHA256).Hash.ToLower()
