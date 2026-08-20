@@ -899,8 +899,24 @@ function streamChat(resp, c) {
   var done = false;
 
   return new Promise(function (resolve, reject) {
+    var watchdog = setTimeout(function () {
+      if (done) return;
+      done = true;
+      state.busy = false;
+      el.sendBtn.classList.remove("busy");
+      var typing = el.messages.querySelector(".typing");
+      if (typing) typing.closest(".msg").remove();
+      if (state.activeId === convId) {
+        el.messages.insertAdjacentHTML("beforeend", errHtml("The server stopped responding (2 minutes without data). Check the SERVE.bat window and send the message again."));
+        scrollBottom();
+      }
+      renderList();
+      updateSend();
+      resolve();
+    }, 120000);
     function finish() {
       if (done) return; done = true;
+      clearTimeout(watchdog);
       state.busy = false;
       el.sendBtn.classList.remove("busy");
       if (state.activeId === convId) {
