@@ -285,7 +285,7 @@ fat binary covers all RDNA2.
 
 ## Acknowledgments
 
-Built on ROCm/TheRock, PyTorch ROCm and the vLLM project. Special thanks to **MrPie** for the upstream `awq_gemv` / `bf16_gemv` / `gemv_w4` kernels included in `plugin_overrides/` ([Discussion #3](https://github.com/sebastianmechno-sys/vllm-rocm-windows-rdna2/discussions/3)) — great to see them running natively on RDNA2 (59-62 tok/s verified on RX 6750 XT). Not affiliated with AMD.
+Built on ROCm/TheRock, PyTorch ROCm and the vLLM project. Sincere thanks to **MrPie** for the upstream `awq_gemv` / `bf16_gemv` / `gemv_w4` kernels included in `plugin_overrides/`. Not affiliated with AMD.
 
 ## License
 
