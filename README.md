@@ -24,6 +24,8 @@ validation (see [docs/MULTIARCH.md](docs/MULTIARCH.md)).
 | rocBLAS FP16 GEMM (native bench) | **25 674 Gflops ≈ 26 TFLOPS** |
 | vLLM decode, Qwen3.5-4B 4-bit | **~58-62 tok/s** (8.3 → 62.5 = 7.5× optimized) |
 
+<p align="center">⭐ Se ha funzionato lascia una stella, grazie! ⭐</p>
+
 ### GPU support matrix
 
 | Family | GPUs | gfx | Override | Status |
@@ -280,6 +282,18 @@ here; the stack is not Qwen-specific._
 (fat binary for gfx1030+1031+1032, or gfx1100/1200 for RDNA3/4; needs HIP SDK
 + MSVC). Only for non-RDNA2 targets or exotic torch ABIs; the shipped rdna2
 fat binary covers all RDNA2.
+
+## Community & Press
+
+Discussioni e articoli che parlano del progetto:
+
+* **DEV Community** — [Native vLLM + ROCm 7.15 Runtime for RX 6000 on Windows 11 — 26 TFLOPS, 62 tok/s](https://dev.to/essebauserdev/native-vllm-rocm-715-runtime-for-rx-6000-rdna2-on-windows-11-26-tflops-fp16-62-toks-3aa6) (18 Aug 2026)
+* **Level1Techs Forums** — [Native vLLM + ROCm 7.15 Runtime for RX 6000 — One-Click Install, No WSL2](https://forum.level1techs.com/t/native-vllm-rocm-7-15-runtime-for-rx-6000-rdna2-on-windows-11-26-tflops-fp16-62-tok-s-one-click-install-no-wsl2-rx-6750-xt-gfx1031-verified/254042) — discussione principale
+* **Level1Techs Forums** — [[Guide / PoC] Native vLLM + ROCm 7.15 on Windows 11 — 54.2 tok/s](https://forum.level1techs.com/t/guide-poc-native-vllm-rocm-7-15-on-windows-11-for-amd-rx-6750-xt-rdna2-no-wsl2-54-2-tok-s/253889) — guida iniziale
+* **Linus Tech Tips** — [Native vLLM + ROCm 7.15 for AMD RX 6000 on Windows 11 — no WSL2, 62 tok/s](https://linustechtips.com/topic/1641949-native-vllm-rocm-715-for-amd-rx-6000-rdna2-on-windows-11-%E2%80%94-no-wsl2-62-toks/) — thread Programming
+* **GameGPU (EN)** — [Enthusiast released native vLLM and ROCm 7.15 environment for AMD Radeon RX 6000 on Windows 11](https://en.gamegpu.com/news/zhelezo/entuziast-vypustil-nativnuyu-sredu-vllm-i-rocm-7-15-dlya-videokart-amd-radeon-rx-6000-na-windows-11)
+
+Se hai scritto un blog, video o post sul progetto, apri una Issue/PR e lo aggiungiamo qui!
 
 ## Acknowledgments
 
