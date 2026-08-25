@@ -6,3 +6,4 @@ thumbs.db
 .DS_Store
 config.bat
 results/setup_verify.log
+results/serve_live.log

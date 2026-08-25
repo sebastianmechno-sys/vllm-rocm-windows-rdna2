@@ -47,8 +47,19 @@ set "PYTHONUTF8=1"
 if not defined VLLM_WIN_HIPGEMV_DIR set "VLLM_WIN_HIPGEMV_DIR=C:\vw_hipgemv_build\gemv_w4_hip"
 
 cd /d "C:\TheRock\ROCM_VLLM_RUNTIME\vllm-rocm-windows\run"
+rem Guard: if a server is already up on this port, do NOT load a second engine
+rem into the GPU (two engines = VRAM exhaustion + weird behavior).
+curl -s -o nul -m 2 http://127.0.0.1:%SERVE_PORT%/v1/models >nul 2>&1
+if %ERRORLEVEL%==0 (
+    echo ============================================================
+    echo   [serve] Server ALREADY RUNNING on 127.0.0.1:%SERVE_PORT% - nothing to do.
+    echo   Close the other SERVE window first if you want to restart it.
+    echo ============================================================
+    timeout /t 5 >nul
+    exit /b 0
+)
 echo ============================================================
-echo   Starting model server on 127.0.0.1:8000 ...
+echo   Starting model server on 127.0.0.1:%SERVE_PORT% ...
 echo   Wait for "Application startup complete", then run CHAT.bat
 echo   First start takes 8-10 minutes (kernel compilation).
 echo ============================================================

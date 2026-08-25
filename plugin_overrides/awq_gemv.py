@@ -1,6 +1,11 @@
 """Fast M=1 W4A16 dequant-GEMV for single-stream decode on RDNA3, wired as an MPLinearKernel
 registered ahead of conch in vLLM's ROCm kernel priority.
 
+Original work: Copyright 2026 ThePie88 (https://github.com/ThePie88/vLLM-ROCm-Windows)
+Licensed under the Apache License, Version 2.0. Modified for RDNA2 (gfx1030/1031/1032)
+fat-binary build, Windows paths and RDNA2 tuning by sebastianmechno-sys.
+See THIRD_PARTY_NOTICES.md and LICENSE.
+
 Why: on ROCm/Windows, AWQ uint4 has no fast kernel -- vLLM routes AWQ -> awq_marlin ->
 choose_mp_linear_kernel([Conch, Exllama]); Exllama rejects uint4 (only uint4b8), Marlin is
 CUDA-only, so ONLY conch remains, which runs a throughput tile (block_m=128, tl.dot needs >=16

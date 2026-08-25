@@ -1,3 +1,8 @@
+// Original work: Copyright 2026 ThePie88 (https://github.com/ThePie88/vLLM-ROCm-Windows)
+// Licensed under the Apache License, Version 2.0. Modified for RDNA2 fat-binary
+// (gfx1030+gfx1031+gfx1032), Windows build and RDNA2 tuning by sebastianmechno-sys.
+// See THIRD_PARTY_NOTICES.md and LICENSE.
+//
 // M=1 W4A16 dequant-GEMV for RDNA3 (gfx1100), hand-written HIP to hit DRAM bandwidth.
 // Layout (conch-normalized): wq [K//8, N] uint32 packed-along-K straight order (value for global
 // row k is (wq[k/8, n] >> (k%8)*4) & 0xF); s [K//G, N] half; z [K//G, N] uint8; G=128.

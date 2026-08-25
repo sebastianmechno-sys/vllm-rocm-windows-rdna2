@@ -20,5 +20,15 @@ echo [chat] ... still loading, server logs are in the other window.
 goto :wait
 
 :up
-start "" "%~dp0chat.html"
+rem Open the chat over a tiny local web server instead of file:// - browsers
+rem block API calls from file:// pages, which would leave the chat stuck on
+rem "connecting..." forever. scripts\chat_server.py picks a free port, reuses
+rem an already-running instance and opens the browser by itself.
+set "UI_PY=C:\TheRock\.venv\Scripts\python.exe"
+if not exist "%UI_PY%" set "UI_PY=C:\Python311\python.exe"
+if exist "%UI_PY%" (
+    start "Chat UI web server (keep open)" /MIN "%UI_PY%" "%~dp0scripts\chat_server.py"
+) else (
+    start "Chat UI web server (keep open)" /MIN python "%~dp0scripts\chat_server.py"
+)
 endlocal

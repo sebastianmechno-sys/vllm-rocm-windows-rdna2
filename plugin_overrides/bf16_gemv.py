@@ -1,5 +1,9 @@
 """Skinny bf16/fp16 M=1 GEMV for the DENSE (unquantized) linears on RDNA3.
 
+Original work: Copyright 2026 ThePie88 (https://github.com/ThePie88/vLLM-ROCm-Windows)
+Licensed under the Apache License, Version 2.0. Modified for RDNA2 (gfx1030/1031/1032)
+and Windows by sebastianmechno-sys. See THIRD_PARTY_NOTICES.md and LICENSE.
+
 Profiling gemma-4-26B-A4B decode showed the per-layer DENSE MLP (bf16, unquantized shared expert,
 gate/up/down at intermediate 2112) is ~43% of the per-token weight bytes -- the single biggest
 memory consumer. On ROCm it goes through rocm_unquantized_gemm -> wvSplitK (the skinny M=1 GEMM,
