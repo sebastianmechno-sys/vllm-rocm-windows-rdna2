@@ -274,8 +274,13 @@ powershell -ExecutionPolicy Bypass -File INSTALL.ps1 -Model <owner>/<model>
 
 ## 致谢
 
-基于 ROCm/TheRock、PyTorch ROCm 与 vLLM 项目构建。与 AMD 无关。
+基于 ROCm/TheRock、PyTorch ROCm 与 vLLM 项目构建。衷心感谢
+**[MrPie (ThePie88)](https://github.com/ThePie88/vLLM-ROCm-Windows)** 提供的
+上游 `awq_gemv` / `bf16_gemv` / `gemv_w4` 内核（包含在 `plugin_overrides/`
+中并已署名）—— Apache 2.0，详见
+[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。与 AMD 无关。
 
 ## 许可证
 
-[Apache License 2.0](LICENSE)
+[Apache License 2.0](LICENSE) — 第三方组件与商标详见
+[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。
