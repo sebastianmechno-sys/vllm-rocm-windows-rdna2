@@ -3,7 +3,7 @@
   "checksums": "SHA256SUMS.txt",
   "variants": {
     "rdna2": {
-      "comment": "AMD Radeon RX 6000 series (gfx1030/1031/1032) - validated (RX 6750 XT). Published as release V2.0.",
+      "comment": "AMD Radeon RX 6000 series (gfx1030/1031/1032) - validated (RX 6750 XT). Archives identical to V2.1/V2.0 (engine unchanged); re-hosted on V2.2.",
       "override": "10.3.1",
       "kernels_dir": "C:\\vw_hipgemv_build",
       "assets": [

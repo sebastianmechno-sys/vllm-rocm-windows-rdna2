@@ -21,7 +21,7 @@ param(
     [string]$OutFile = "SHA256SUMS.txt",
     [string]$Owner = "sebastianmechno-sys",
     [string]$Repo = "vllm-rocm-windows-rdna2",
-    [string]$Tag = "V2.1",
+    [string]$Tag = "V2.2",
     [ValidateSet("all","rdna2","rdna3","rdna4")]
     [string]$Variant = "all",
     [long]$ChunkSize = 738197504,

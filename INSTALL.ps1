@@ -22,7 +22,7 @@
 param(
     [string]$Owner = "sebastianmechno-sys",
     [string]$Repo  = "vllm-rocm-windows-rdna2",
-    [string]$Tag   = "V2.1",
+[string]$Tag = "V2.2",
     [string]$BaseUrl = "",
     [string]$Prefix = "",
     [string]$Model = "",
